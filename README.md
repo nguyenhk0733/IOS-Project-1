@@ -33,9 +33,3 @@ Thiết lập ban đầu cho dự án iOS bao gồm các bước sau:
    - Thiết lập CI (GitHub Actions, Bitrise, v.v.) khi dự án sẵn sàng.
 
 Các bước trên sẽ giúp bạn có nền tảng vững chắc trước khi bắt đầu phát triển tính năng cụ thể.
-
-## SunLint
-
-- File `sunlint.config.json` mô tả ngăn nắp công nghệ đang dùng để SunLint chọn rule phù hợp.
-- Cấu hình hiện tại giả định code TypeScript (module ESNext) với React/React Router/Redux và đường dẫn nguồn chính là `src/`.
-- Các bộ rule `quality`, `security`, `accessibility` ở chế độ `recommended`; tuỳ dự án có thể chuyển sang `strict` hoặc tắt bớt rule không dùng.
