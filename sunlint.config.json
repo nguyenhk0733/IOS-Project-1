@@ -1,0 +1,25 @@
+{
+  "$schema": "https://coding-standards.sun-asterisk.vn/schema/sunlint/config.json",
+  "language": {
+    "primary": "typescript",
+    "style": "scss",
+    "module": "esnext"
+  },
+  "framework": {
+    "ui": "react",
+    "routing": "react-router",
+    "stateManagement": "redux"
+  },
+  "environments": {
+    "runtime": ["browser"],
+    "tests": ["jest"]
+  },
+  "paths": {
+    "src": "./src"
+  },
+  "rulesets": {
+    "quality": "recommended",
+    "security": "recommended",
+    "accessibility": "recommended"
+  }
+}
