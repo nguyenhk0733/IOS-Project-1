@@ -54,3 +54,8 @@ Các bước trên sẽ giúp bạn có nền tảng vững chắc trước khi 
 ```
 
 Chi tiết hơn về vai trò từng thư mục được mô tả trong [`docs/REPO_STRUCTURE.md`](docs/REPO_STRUCTURE.md).
+
+## Quản lý Codex bot
+
+- Nếu muốn tắt auto-review hoặc bật lại khi cần, tham khảo hướng dẫn trong [`docs/CODEX_AUTOMATION.md`](docs/CODEX_AUTOMATION.md).
+- File cấu hình chính nằm tại [`.github/codex.yml`](.github/codex.yml); workflow xoá comment nằm ở [`.github/workflows/codex-comment-cleanup.yml`](.github/workflows/codex-comment-cleanup.yml).

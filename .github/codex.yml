@@ -1,0 +1,5 @@
+# Configuration for the Codex review bot.
+# Set `auto_review` to false to keep the app installed but stop automatic reviews.
+auto_review: false
+# Optional: you can continue to request manual reviews by mentioning the bot.
+manual_trigger_phrase: "@codex-bot review"
