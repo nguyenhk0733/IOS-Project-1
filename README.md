@@ -34,6 +34,15 @@ Thiết lập ban đầu cho dự án iOS bao gồm các bước sau:
 
 Các bước trên sẽ giúp bạn có nền tảng vững chắc trước khi bắt đầu phát triển tính năng cụ thể.
 
+## Domain content (khuyến nghị bệnh cây)
+
+- Nội dung tiếng Việt được biên soạn trong [`docs/recommendation_vi.py`](docs/recommendation_vi.py).
+- Sử dụng script [`src/python/export_recommendations.py`](src/python/export_recommendations.py)
+  để chuyển đổi sang JSON lưu tại `data/processed/recommendations_vi.json`.
+- Chi tiết quy trình và cách dùng trên iOS được mô tả trong
+  [`docs/domain-content.md`](docs/domain-content.md). Swift service mẫu nằm tại
+  [`ios/DomainContent/RecommendationService.swift`](ios/DomainContent/RecommendationService.swift).
+
 ## Cấu trúc thư mục hiện tại
 
 ```
