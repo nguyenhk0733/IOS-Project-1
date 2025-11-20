@@ -68,3 +68,17 @@ Chi tiết hơn về vai trò từng thư mục được mô tả trong [`docs/R
 
 - Nếu muốn tắt auto-review hoặc bật lại khi cần, tham khảo hướng dẫn trong [`docs/CODEX_AUTOMATION.md`](docs/CODEX_AUTOMATION.md).
 - File cấu hình chính nằm tại [`.github/codex.yml`](.github/codex.yml); workflow xoá comment nằm ở [`.github/workflows/codex-comment-cleanup.yml`](.github/workflows/codex-comment-cleanup.yml).
+
+## Triển khai FastAPI lên Render.com
+
+Sử dụng `render.yaml` ở gốc repo để tạo Web Service từ Render:
+
+1. Push code lên GitHub/GitLab và chọn **New → Web Service** trên Render, trỏ đến repo này.
+2. Render tự đọc `render.yaml` và cấu hình:
+   - Build: `pip install -r requirements.txt`
+   - Start: `uvicorn api.api_server:app --host 0.0.0.0 --port $PORT`
+   - Env: `PYTHONPATH=/opt/render/project/src`
+3. Đảm bảo tệp model `models/trained_model.h5` có trong repo hoặc được tải ở bước build.
+4. Endpoint health check: `/health`; dự đoán: `/predict`.
+
+Nếu cần chỉnh plan/tên service, sửa trực tiếp trong `render.yaml` trước khi deploy.

@@ -18,7 +18,14 @@ ROOT = Path(__file__).resolve().parent.parent
 @lru_cache(maxsize=1)
 def load_model() -> tf.keras.Model:
     """Load and cache the trained TensorFlow model."""
-    return tf.keras.models.load_model("trained_model.h5")
+
+    model_path = ROOT / "models" / "trained_model.h5"
+    if not model_path.exists():
+        raise FileNotFoundError(
+            "trained_model.h5 not found. Ensure the model artifact is placed in ./models/"
+        )
+
+    return tf.keras.models.load_model(model_path)
 
 
 @lru_cache(maxsize=1)
