@@ -1,8 +1,10 @@
 """FastAPI server exposing plant disease prediction endpoints."""
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from io import BytesIO
+from pathlib import Path
 from typing import Dict, List, Sequence
 
 import numpy as np
@@ -10,13 +12,46 @@ import tensorflow as tf
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-# Note: recommendation text is not returned by the API per request.
+ROOT = Path(__file__).resolve().parent.parent
 
 
 @lru_cache(maxsize=1)
 def load_model() -> tf.keras.Model:
     """Load and cache the trained TensorFlow model."""
     return tf.keras.models.load_model("trained_model.h5")
+
+
+@lru_cache(maxsize=1)
+def load_recommendations() -> Dict[str, dict | str | None]:
+    """Load processed recommendation JSON and build lookup tables.
+
+    The function is cached to avoid disk I/O during inference. If the file is
+    missing in a deployment environment, the API still works but omits
+    recommendations.
+    """
+
+    data_path = ROOT / "data" / "processed" / "recommendations_vi.json"
+    if not data_path.exists():
+        return {"by_label": {}, "fallback": None}
+
+    payload = json.loads(data_path.read_text(encoding="utf-8"))
+    by_label = {
+        rec["label"]: rec.get("markdown")
+        for rec in payload.get("recommendations", [])
+        if "label" in rec
+    }
+    fallback = payload.get("general_blocks", {}).get("fallback")
+    return {"by_label": by_label, "fallback": fallback}
+
+
+def get_recommendation_for_label(label: str) -> str | None:
+    """Return the Markdown recommendation for a prediction label if available."""
+
+    payload = load_recommendations()
+    if label in payload["by_label"]:
+        return payload["by_label"][label]
+
+    return payload.get("fallback")
 
 
 CLASS_NAMES: List[str] = [
@@ -91,7 +126,6 @@ def predict(image_array: np.ndarray, *, plant: str | None = None) -> dict:
 
     Changes made per request:
     - Only return result when reported confidence > 0.80 (80%).
-    - Do not include recommendation_markdown in the response.
     - Split label into `plant` and `disease` fields.
     """
     THRESHOLD = 0.80
@@ -130,11 +164,13 @@ def predict(image_array: np.ndarray, *, plant: str | None = None) -> dict:
 
         # Split predicted label and return only normalized probability (no raw probs)
         _, disease = full_label.split("___", 1)
+        recommendation_markdown = get_recommendation_for_label(full_label)
 
         return {
             "plant": plant,
             "disease": disease,
             "normalized_probability": reported_normalized,
+            "recommendation_markdown": recommendation_markdown,
         }
 
     # Default behaviour: evaluate all classes and require raw confidence > THRESHOLD
@@ -166,11 +202,13 @@ def predict(image_array: np.ndarray, *, plant: str | None = None) -> dict:
     parts = full_label.split("___", 1)
     plant_name = parts[0]
     disease_name = parts[1] if len(parts) > 1 else ""
+    recommendation_markdown = get_recommendation_for_label(full_label)
 
     return {
         "plant": plant_name,
         "disease": disease_name,
         "confidence": confidence_raw,
+        "recommendation_markdown": recommendation_markdown,
         "probabilities": probabilities,
     }
 
