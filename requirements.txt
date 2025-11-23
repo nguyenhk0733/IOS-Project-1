@@ -1,18 +1,5 @@
 tensorflow==2.20.0
-# TensorFlow already bundles a compatible Keras version.
-# Installing keras separately can lead to version conflicts on deployment platforms.
-# protobuf==4.24.4
-# tensorboard==2.17.0
-
-#scikit-learn==1.6.1
-numpy==1.26.4
-matplotlib==3.7.2
-seaborn==0.13.0
-pandas==2.2.3
-streamlit==1.37.0
-librosa==0.10.1
 opencv-contrib-python==4.9.0.80
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
-
-
+pillow==10.4.0
