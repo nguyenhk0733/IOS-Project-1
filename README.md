@@ -82,3 +82,9 @@ Sử dụng `render.yaml` ở gốc repo để tạo Web Service từ Render:
 4. Endpoint health check: `/health`; dự đoán: `/predict`.
 
 Nếu cần chỉnh plan/tên service, sửa trực tiếp trong `render.yaml` trước khi deploy.
+
+## Docker & batch tools
+
+- Build image phục vụ API: `make docker-build` (image mặc định: `plant-disease-api`).
+- Chạy container cổng 8000: `make docker-run`.
+- Chạy batch predict xuất CSV: `make batch-predict INPUT=./path/to/images OUTPUT=predictions.csv [PLANT=Apple]`.
