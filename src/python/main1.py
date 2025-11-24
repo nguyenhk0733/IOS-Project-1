@@ -1,8 +1,13 @@
+import base64
+import io
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+import numpy as np
 import streamlit as st
 import tensorflow as tf
-import numpy as np
-import base64
-from pathlib import Path
 from recommendation_vi import get_recommendation, get_quick_ref_markdown  # ⟵ THÊM HÀM NÀY
 
 
@@ -17,6 +22,8 @@ st.set_page_config(
 )
 
 ASSETS_DIR = Path("assets")
+DB_PATH = Path("data/predictions.db")
+UPLOAD_DIR = Path("data/uploads")
 
 # =========================
 # CSS TUỲ BIẾN (FRONTEND)
@@ -165,6 +172,59 @@ button[kind="primary"]{
 """
 
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+# =========================
+# TIỆN ÍCH CSDL (LỊCH SỬ & CACHE)
+# =========================
+
+
+@st.cache_resource
+def get_db_conn():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS predictions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            plant TEXT NOT NULL,
+            label TEXT NOT NULL,
+            confidence REAL NOT NULL,
+            image_path TEXT
+        )
+        """
+    )
+    conn.commit()
+    return conn
+
+
+def save_uploaded_image(filename: str, data: bytes) -> Path:
+    safe_name = filename.replace(" ", "_")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = UPLOAD_DIR / f"{timestamp}_{safe_name}"
+    with open(path, "wb") as f:
+        f.write(data)
+    return path
+
+
+def insert_prediction(plant: str, label: str, confidence: float, image_path: Optional[Path]):
+    conn = get_db_conn()
+    conn.execute(
+        "INSERT INTO predictions (created_at, plant, label, confidence, image_path) VALUES (?, ?, ?, ?, ?)",
+        (datetime.now().isoformat(timespec="seconds"), plant, label, confidence, str(image_path) if image_path else None),
+    )
+    conn.commit()
+
+
+@st.cache_data(show_spinner=False)
+def load_recent_predictions(limit: int = 8):
+    conn = get_db_conn()
+    rows = conn.execute(
+        "SELECT created_at, plant, label, confidence, image_path FROM predictions ORDER BY created_at DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    return rows
 
 # =========================
 # 1) TẢI MÔ HÌNH (CÓ CACHE)
@@ -445,8 +505,12 @@ else:  # Nhận diện bệnh
         st.image(test_image, use_column_width=True, caption="Ảnh đã chọn")
 
     if test_image and predict_btn:
+        image_bytes = test_image.getvalue()
+        image_buffer = io.BytesIO(image_bytes)
+        image_buffer.seek(0)
+
         with st.spinner("Đang phân tích..."):
-            idx, conf, prob_vec = model_prediction(test_image)
+            idx, conf, prob_vec = model_prediction(image_buffer)
             # Lọc xác suất theo loại cây được chọn
             plant_classes = PLANT_TO_CLASSES.get(plant_choice, [])
             plant_indices = [i for i, _ in plant_classes]
@@ -462,6 +526,11 @@ else:  # Nhận diện bệnh
             conf_within_group = float(plant_probs[best_local_idx])
             group_prob_sum = float(np.sum(plant_probs))
             normalized_conf = conf_within_group / group_prob_sum if group_prob_sum > 0 else 0.0
+
+        # LƯU LỊCH SỬ
+        saved_path = save_uploaded_image(test_image.name, image_bytes)
+        insert_prediction(plant_choice, label, normalized_conf, saved_path)
+        load_recent_predictions.clear()
 
         # KẾT QUẢ
         st.markdown(
@@ -503,3 +572,31 @@ else:  # Nhận diện bệnh
 
     elif not test_image:
         st.info("Vui lòng chọn loại cây và tải một ảnh để bắt đầu.")
+
+    st.markdown("### 🗂️ Lịch sử dự đoán gần đây")
+    recent_rows = load_recent_predictions()
+    if recent_rows:
+        for created_at, plant, label_hist, conf_hist, image_path in recent_rows:
+            with st.container():
+                c1, c2 = st.columns([1, 3])
+                with c1:
+                    if image_path and Path(image_path).exists():
+                        st.image(image_path, caption=Path(image_path).name, use_column_width=True)
+                    else:
+                        st.caption("(Chưa lưu ảnh)")
+                with c2:
+                    st.markdown(
+                        f"""
+                        <div class="card" style="padding:14px;">
+                          <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="badge">{plant}</span>
+                            <div style="font-weight:700;">{label_hist}</div>
+                          </div>
+                          <div style="color:#64748b;margin-top:6px;">Độ tự tin: <b>{conf_hist:.2%}</b></div>
+                          <div style="color:#94a3b8;font-size:13px;margin-top:4px;">{created_at}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+    else:
+        st.info("Chưa có lịch sử. Hãy tải ảnh và dự đoán để lưu lại kết quả mới nhất.")
