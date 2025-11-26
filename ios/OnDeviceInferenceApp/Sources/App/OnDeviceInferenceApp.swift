@@ -4,19 +4,27 @@ import Capture
 import Result
 import History
 import Settings
+import Shared
 
 @main
 struct OnDeviceInferenceApp: App {
     @StateObject private var appViewModel = AppViewModel()
+    @StateObject private var permissionsManager = PermissionsManager()
 
     var body: some Scene {
         WindowGroup {
             TabView(selection: $appViewModel.selectedTab) {
-                OnboardingView(viewModel: appViewModel.onboardingViewModel)
+                OnboardingView(
+                    viewModel: appViewModel.onboardingViewModel,
+                    permissionsManager: permissionsManager
+                )
                     .tabItem { Label("Onboarding", systemImage: "sparkles") }
                     .tag(AppViewModel.Tab.onboarding)
 
-                CaptureView(viewModel: appViewModel.captureViewModel)
+                CaptureView(
+                    viewModel: appViewModel.captureViewModel,
+                    permissionsManager: permissionsManager
+                )
                     .tabItem { Label("Capture", systemImage: "camera") }
                     .tag(AppViewModel.Tab.capture)
 
@@ -32,6 +40,8 @@ struct OnDeviceInferenceApp: App {
                     .tabItem { Label("Settings", systemImage: "gearshape") }
                     .tag(AppViewModel.Tab.settings)
             }
+            .tint(.appPrimary)
+            .background(Color.appBackground.ignoresSafeArea())
         }
     }
 }
