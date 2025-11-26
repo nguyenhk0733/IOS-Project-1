@@ -20,6 +20,11 @@ let package = Package(
                 color: .orange
             ),
             accentColor: .presetColor(.orange),
+            infoPlist: .extendingDefault(with: [
+                "UILaunchStoryboardName": "LaunchScreen",
+                "NSCameraUsageDescription": "Camera access is needed to capture images for on-device inference.",
+                "NSPhotoLibraryUsageDescription": "Photo library access lets you pick images to analyze on-device."
+            ]),
             supportedDeviceFamilies: [
                 .pad,
                 .phone
