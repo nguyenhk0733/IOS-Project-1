@@ -4,6 +4,7 @@ import Capture
 import Result
 import History
 import Settings
+import Shared
 
 final class AppViewModel: ObservableObject {
     enum Tab: Hashable {
@@ -16,9 +17,16 @@ final class AppViewModel: ObservableObject {
 
     @Published var selectedTab: Tab = .onboarding
 
+    private let inferenceService = OnDeviceInferenceService()
+
     let onboardingViewModel = OnboardingViewModel()
-    let captureViewModel = CaptureViewModel()
-    let resultViewModel = ResultViewModel()
+    let captureViewModel: CaptureViewModel
+    let resultViewModel: ResultViewModel
     let historyViewModel = HistoryViewModel()
     let settingsViewModel = SettingsViewModel()
+
+    init() {
+        captureViewModel = CaptureViewModel(inferenceService: inferenceService)
+        resultViewModel = ResultViewModel(inferenceService: inferenceService)
+    }
 }
