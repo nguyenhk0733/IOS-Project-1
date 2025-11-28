@@ -8,7 +8,7 @@ public final class ResultViewModel: ObservableObject {
 
     private let inferenceService: OnDeviceInferenceServiceProtocol
 
-    public init(inferenceService: OnDeviceInferenceServiceProtocol = MockOnDeviceInferenceService()) {
+    public init(inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService()) {
         self.inferenceService = inferenceService
     }
 

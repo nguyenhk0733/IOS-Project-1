@@ -51,6 +51,47 @@ public struct CaptureView: View {
                 if viewModel.capturedData != nil {
                     Label("Data ready for inference", systemImage: "checkmark.seal")
                         .foregroundStyle(.green)
+
+                    if viewModel.isRunningInference {
+                        ProgressView("Running inference…")
+                    } else {
+                        Button("Run On-Device Inference") {
+                            Task { await viewModel.runInferenceOnCapture() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.appPrimary)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.appPrimary)
+                }
+
+                    if let inferenceResult = viewModel.inferenceResult {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Prediction: \(inferenceResult.summary)")
+                            Text("Confidence: \(Int(inferenceResult.confidence * 100))%")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.appBackground)
+                        )
+                    }
+                if let error = viewModel.preparationError {
+                    Text(error)
+                        .foregroundStyle(.red)
+                }
+
+                if let captureError = viewModel.captureError {
+                    Text(captureError)
+                        .foregroundStyle(.red)
+                }
+
+                if viewModel.capturedData != nil {
+                    Label("Data ready for inference", systemImage: "checkmark.seal")
+                        .foregroundStyle(.green)
                 }
             }
             .padding()
