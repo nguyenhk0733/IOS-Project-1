@@ -22,12 +22,16 @@ public struct CaptureView: View {
                     .appBodyStyle()
                     .multilineTextAlignment(.center)
 
+                // Camera / photo library permission prompts
                 permissionStack
 
-                if permissionsManager.cameraStatus == .authorized || permissionsManager.photoLibraryStatus == .authorized {
+                // Actions để chụp / chọn ảnh
+                if permissionsManager.cameraStatus == .authorized ||
+                    permissionsManager.photoLibraryStatus == .authorized {
                     captureActions
                 }
 
+                // Chuẩn bị model
                 if viewModel.isPreparingModel {
                     ProgressView("Preparing model…")
                 } else {
@@ -38,20 +42,24 @@ public struct CaptureView: View {
                     .tint(.appPrimary)
                 }
 
+                // Error khi chuẩn bị model
                 if let error = viewModel.preparationError {
                     Text(error)
                         .foregroundStyle(.red)
                 }
 
+                // Error khi capture
                 if let captureError = viewModel.captureError {
                     Text(captureError)
                         .foregroundStyle(.red)
                 }
 
+                // Khi đã có dữ liệu ảnh để suy luận
                 if viewModel.capturedData != nil {
                     Label("Data ready for inference", systemImage: "checkmark.seal")
                         .foregroundStyle(.green)
 
+                    // Trạng thái chạy inference
                     if viewModel.isRunningInference {
                         ProgressView("Running inference…")
                     } else {
@@ -61,10 +69,8 @@ public struct CaptureView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.appPrimary)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.appPrimary)
-                }
 
+                    // Kết quả suy luận
                     if let inferenceResult = viewModel.inferenceResult {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Prediction: \(inferenceResult.summary)")
@@ -79,19 +85,6 @@ public struct CaptureView: View {
                                 .fill(Color.appBackground)
                         )
                     }
-                if let error = viewModel.preparationError {
-                    Text(error)
-                        .foregroundStyle(.red)
-                }
-
-                if let captureError = viewModel.captureError {
-                    Text(captureError)
-                        .foregroundStyle(.red)
-                }
-
-                if viewModel.capturedData != nil {
-                    Label("Data ready for inference", systemImage: "checkmark.seal")
-                        .foregroundStyle(.green)
                 }
             }
             .padding()
@@ -104,12 +97,18 @@ public struct CaptureView: View {
                 viewModel.ingestImage(at: url)
             }
         }
-        .photosPicker(isPresented: $isPresentingPhotoPicker, selection: $selectedPickerItem, matching: .images)
+        .photosPicker(
+            isPresented: $isPresentingPhotoPicker,
+            selection: $selectedPickerItem,
+            matching: .images
+        )
         .onChange(of: selectedPickerItem) { newValue in
             guard let newValue else { return }
             Task { await loadPickedItem(newValue) }
         }
     }
+
+    // MARK: - Permission Views
 
     @ViewBuilder
     private var permissionStack: some View {
@@ -121,6 +120,8 @@ public struct CaptureView: View {
             PermissionRequestView(permissionsManager: permissionsManager, type: .photoLibrary)
         }
     }
+
+    // MARK: - Capture Actions
 
     @ViewBuilder
     private var captureActions: some View {
@@ -162,6 +163,8 @@ public struct CaptureView: View {
         }
     }
 
+    // MARK: - Helpers
+
     private func handlePhotoPickerTapped() {
         switch permissionsManager.photoLibraryStatus {
         case .authorized:
@@ -181,9 +184,13 @@ public struct CaptureView: View {
     private func loadPickedItem(_ item: PhotosPickerItem) async {
         do {
             if let data = try await item.loadTransferable(type: Data.self) {
-                let preferredExtension = item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"
+                let preferredExtension =
+                    item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"
                 await MainActor.run {
-                    viewModel.ingestImageData(data, preferredExtension: preferredExtension)
+                    viewModel.ingestImageData(
+                        data,
+                        preferredExtension: preferredExtension
+                    )
                 }
             }
         } catch {
@@ -196,6 +203,9 @@ public struct CaptureView: View {
 
 #Preview {
     NavigationStack {
-        CaptureView(viewModel: CaptureViewModel(), permissionsManager: PermissionsManager())
+        CaptureView(
+            viewModel: CaptureViewModel(),
+            permissionsManager: PermissionsManager()
+        )
     }
 }
