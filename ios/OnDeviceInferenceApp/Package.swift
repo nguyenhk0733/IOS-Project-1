@@ -77,7 +77,10 @@ let package = Package(
         ),
         .target(
             name: "Shared",
-            dependencies: []
+            dependencies: [],
+            resources: [
+                .process("Sources/Shared/Resources")
+            ]
         )
     ]
 )
