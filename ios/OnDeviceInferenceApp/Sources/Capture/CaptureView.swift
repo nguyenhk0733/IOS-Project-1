@@ -61,6 +61,9 @@ public struct CaptureView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.appPrimary)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.appPrimary)
+                }
 
                     if let inferenceResult = viewModel.inferenceResult {
                         VStack(alignment: .leading, spacing: 6) {
@@ -76,6 +79,19 @@ public struct CaptureView: View {
                                 .fill(Color.appBackground)
                         )
                     }
+                if let error = viewModel.preparationError {
+                    Text(error)
+                        .foregroundStyle(.red)
+                }
+
+                if let captureError = viewModel.captureError {
+                    Text(captureError)
+                        .foregroundStyle(.red)
+                }
+
+                if viewModel.capturedData != nil {
+                    Label("Data ready for inference", systemImage: "checkmark.seal")
+                        .foregroundStyle(.green)
                 }
             }
             .padding()
