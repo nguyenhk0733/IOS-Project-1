@@ -27,6 +27,9 @@ public struct ResultView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Summary: \(result.summary)")
                     Text("Confidence: \(Int(result.confidence * 100))%")
+                    if let timing = result.timingMilliseconds {
+                        Text(String(format: "Inference time: %.1f ms", timing))
+                    }
                     if !result.metadata.isEmpty {
                         Text("Metadata: \(result.metadata.map { "\($0.key): \($0.value)" }.joined(separator: ", "))")
                             .font(.footnote)
