@@ -17,16 +17,18 @@ final class AppViewModel: ObservableObject {
 
     @Published var selectedTab: Tab = .onboarding
 
-    private let inferenceService = OnDeviceInferenceService()
+    private let inferenceService: OnDeviceInferenceServiceProtocol
 
     let onboardingViewModel = OnboardingViewModel()
     let captureViewModel: CaptureViewModel
     let resultViewModel: ResultViewModel
     let historyViewModel = HistoryViewModel()
-    let settingsViewModel = SettingsViewModel()
+    let settingsViewModel: SettingsViewModel
 
-    init() {
+    init(inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService()) {
+        self.inferenceService = inferenceService
         captureViewModel = CaptureViewModel(inferenceService: inferenceService)
         resultViewModel = ResultViewModel(inferenceService: inferenceService)
+        settingsViewModel = SettingsViewModel(inferenceService: inferenceService)
     }
 }
