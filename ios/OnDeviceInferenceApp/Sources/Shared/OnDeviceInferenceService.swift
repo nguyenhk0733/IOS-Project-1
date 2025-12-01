@@ -6,17 +6,20 @@ import UIKit
 public protocol OnDeviceInferenceServiceProtocol {
     func prepareModel() async throws
     func runInference(on data: Data) async throws -> InferenceResult
+    func benchmarkMetrics() -> InferenceBenchmark
 }
 
 public struct InferenceResult: Sendable, Equatable {
     public let summary: String
     public let confidence: Double
     public let metadata: [String: String]
+    public let timingMilliseconds: Double?
 
-    public init(summary: String, confidence: Double, metadata: [String: String] = [:]) {
+    public init(summary: String, confidence: Double, metadata: [String: String] = [:], timingMilliseconds: Double? = nil) {
         self.summary = summary
         self.confidence = confidence
         self.metadata = metadata
+        self.timingMilliseconds = timingMilliseconds
     }
 }
 
@@ -44,6 +47,7 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
     private let modelName: String
     private let labelMapper: LabelMapper
     private let preprocessor = ImagePreprocessor()
+    private var benchmark = InferenceBenchmark()
 
     private var vnModel: VNCoreMLModel?
     private var targetImageSize: CGSize?
@@ -81,6 +85,8 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
         guard let vnModel else { throw OnDeviceInferenceError.modelNotPrepared }
         guard let targetImageSize else { throw OnDeviceInferenceError.modelNotPrepared }
 
+        let start = CFAbsoluteTimeGetCurrent()
+
         let pixelBuffer: CVPixelBuffer
         do {
             pixelBuffer = try preprocessor.pixelBuffer(from: data, targetSize: targetImageSize)
@@ -96,7 +102,9 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
                 }
 
                 do {
-                    let result = try Self.handleResults(request.results, mapper: self.labelMapper)
+                    let elapsedMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
+                    self.benchmark.record(durationMilliseconds: elapsedMs)
+                    let result = try Self.handleResults(request.results, mapper: self.labelMapper, timingMilliseconds: elapsedMs)
                     continuation.resume(returning: result)
                 } catch {
                     continuation.resume(throwing: error)
@@ -112,6 +120,10 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
         }
     }
 
+    public func benchmarkMetrics() -> InferenceBenchmark {
+        benchmark
+    }
+
     private static func deriveInputSize(from model: MLModel) -> CGSize {
         if let description = model.modelDescription.inputDescriptionsByName.first?.value,
            let constraint = description.imageConstraint {
@@ -121,7 +133,7 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
         return CGSize(width: 224, height: 224)
     }
 
-    private static func handleResults(_ results: [Any]?, mapper: LabelMapper) throws -> InferenceResult {
+    private static func handleResults(_ results: [Any]?, mapper: LabelMapper, timingMilliseconds: Double?) throws -> InferenceResult {
         if let classifications = results as? [VNClassificationObservation], let top = classifications.first {
             let mappedIndex = Int(top.identifier) ?? -1
             let mappedLabel = mappedIndex >= 0 ? mapper.label(for: mappedIndex) : top.identifier
@@ -131,8 +143,10 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
                 confidence: Double(top.confidence),
                 metadata: [
                     "rawLabel": top.identifier,
-                    "mappedLabel": mappedLabel
-                ]
+                    "mappedLabel": mappedLabel,
+                    "inferenceTimeMs": String(format: "%.1f", timingMilliseconds ?? 0)
+                ],
+                timingMilliseconds: timingMilliseconds
             )
         }
 
@@ -143,7 +157,11 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
             return InferenceResult(
                 summary: label,
                 confidence: confidence,
-                metadata: ["classIndex": "\(index)"]
+                metadata: [
+                    "classIndex": "\(index)",
+                    "inferenceTimeMs": String(format: "%.1f", timingMilliseconds ?? 0)
+                ],
+                timingMilliseconds: timingMilliseconds
             )
         }
 
@@ -152,6 +170,8 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
 }
 
 public final class MockOnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
+    private var benchmark = InferenceBenchmark()
+
     public init() {}
 
     public func prepareModel() async throws {
@@ -159,12 +179,20 @@ public final class MockOnDeviceInferenceService: OnDeviceInferenceServiceProtoco
     }
 
     public func runInference(on data: Data) async throws -> InferenceResult {
+        let start = CFAbsoluteTimeGetCurrent()
         let hashed = abs(data.hashValue % 3)
+        let elapsedMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
+        benchmark.record(durationMilliseconds: elapsedMs)
         return InferenceResult(
             summary: ["healthy", "disease", "unknown"][hashed],
             confidence: 0.8,
-            metadata: ["source": "mock"]
+            metadata: ["source": "mock", "inferenceTimeMs": String(format: "%.1f", elapsedMs)],
+            timingMilliseconds: elapsedMs
         )
+    }
+
+    public func benchmarkMetrics() -> InferenceBenchmark {
+        benchmark
     }
 }
 
