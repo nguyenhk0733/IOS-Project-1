@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import Shared
+import UIKit
 
 public struct CaptureView: View {
     @ObservedObject var viewModel: CaptureViewModel
@@ -9,6 +10,8 @@ public struct CaptureView: View {
     @State private var isShowingCamera = false
     @State private var isPresentingPhotoPicker = false
     @State private var selectedPickerItem: PhotosPickerItem?
+    @State private var isPresentingShareSheet = false
+    @State private var shareItems: [Any] = []
 
     public init(viewModel: CaptureViewModel, permissionsManager: PermissionsManager) {
         self.viewModel = viewModel
@@ -77,6 +80,24 @@ public struct CaptureView: View {
                             Text("Confidence: \(Int(inferenceResult.confidence * 100))%")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+
+                            NavigationLink {
+                                DiseaseDetailView(result: inferenceResult)
+                            } label: {
+                                Label("View disease details", systemImage: "list.bullet.clipboard")
+                                    .font(.subheadline)
+                            }
+                            .padding(.top, 4)
+
+                            Button {
+                                configureShareItems(for: inferenceResult)
+                                isPresentingShareSheet = true
+                            } label: {
+                                Label("Share result", systemImage: "square.and.arrow.up")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.appPrimary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
@@ -96,6 +117,9 @@ public struct CaptureView: View {
             CameraCaptureView(permissionsManager: permissionsManager) { url in
                 viewModel.ingestImage(at: url)
             }
+        }
+        .sheet(isPresented: $isPresentingShareSheet) {
+            ShareSheet(activityItems: shareItems)
         }
         .photosPicker(
             isPresented: $isPresentingPhotoPicker,
@@ -198,6 +222,19 @@ public struct CaptureView: View {
                 viewModel.recordCaptureError(error.localizedDescription)
             }
         }
+    }
+
+    private func configureShareItems(for result: InferenceResult) {
+        var items: [Any] = []
+
+        if let data = viewModel.capturedData, let uiImage = UIImage(data: data) {
+            items.append(uiImage)
+        } else if let placeholder = UIImage(systemName: "leaf.circle") {
+            items.append(placeholder)
+        }
+
+        items.append("Label: \(result.summary) | Confidence: \(Int(result.confidence * 100))%")
+        shareItems = items
     }
 }
 

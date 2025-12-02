@@ -14,31 +14,41 @@ struct OnDeviceInferenceApp: App {
     var body: some Scene {
         WindowGroup {
             TabView(selection: $appViewModel.selectedTab) {
-                OnboardingView(
-                    viewModel: appViewModel.onboardingViewModel,
-                    permissionsManager: permissionsManager
-                )
-                    .tabItem { Label("Onboarding", systemImage: "sparkles") }
-                    .tag(AppViewModel.Tab.onboarding)
+                NavigationStack {
+                    OnboardingView(
+                        viewModel: appViewModel.onboardingViewModel,
+                        permissionsManager: permissionsManager
+                    )
+                }
+                .tabItem { Label("Onboarding", systemImage: "sparkles") }
+                .tag(AppViewModel.Tab.onboarding)
 
-                CaptureView(
-                    viewModel: appViewModel.captureViewModel,
-                    permissionsManager: permissionsManager
-                )
-                    .tabItem { Label("Capture", systemImage: "camera") }
-                    .tag(AppViewModel.Tab.capture)
+                NavigationStack {
+                    CaptureView(
+                        viewModel: appViewModel.captureViewModel,
+                        permissionsManager: permissionsManager
+                    )
+                }
+                .tabItem { Label("Capture", systemImage: "camera") }
+                .tag(AppViewModel.Tab.capture)
 
-                ResultView(viewModel: appViewModel.resultViewModel)
-                    .tabItem { Label("Result", systemImage: "wand.and.stars") }
-                    .tag(AppViewModel.Tab.result)
+                NavigationStack {
+                    ResultView(viewModel: appViewModel.resultViewModel)
+                }
+                .tabItem { Label("Result", systemImage: "wand.and.stars") }
+                .tag(AppViewModel.Tab.result)
 
-                HistoryView(viewModel: appViewModel.historyViewModel)
-                    .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
-                    .tag(AppViewModel.Tab.history)
+                NavigationStack {
+                    HistoryView(viewModel: appViewModel.historyViewModel)
+                }
+                .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
+                .tag(AppViewModel.Tab.history)
 
-                SettingsView(viewModel: appViewModel.settingsViewModel)
-                    .tabItem { Label("Settings", systemImage: "gearshape") }
-                    .tag(AppViewModel.Tab.settings)
+                NavigationStack {
+                    SettingsView(viewModel: appViewModel.settingsViewModel)
+                }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(AppViewModel.Tab.settings)
             }
             .tint(.appPrimary)
             .background(Color.appBackground.ignoresSafeArea())
