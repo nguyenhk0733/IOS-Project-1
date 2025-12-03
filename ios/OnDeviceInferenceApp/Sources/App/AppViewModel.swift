@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Onboarding
 import Capture
@@ -22,13 +23,35 @@ final class AppViewModel: ObservableObject {
     let onboardingViewModel = OnboardingViewModel()
     let captureViewModel: CaptureViewModel
     let resultViewModel: ResultViewModel
-    let historyViewModel = HistoryViewModel()
+    let historyViewModel: HistoryViewModel
     let settingsViewModel: SettingsViewModel
 
-    init(inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService()) {
+    private var cancellables = Set<AnyCancellable>()
+
+    init(
+        inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService(),
+        historyStore: HistoryStoring = HistoryStore.shared
+    ) {
         self.inferenceService = inferenceService
         captureViewModel = CaptureViewModel(inferenceService: inferenceService)
         resultViewModel = ResultViewModel(inferenceService: inferenceService)
+        historyViewModel = HistoryViewModel(store: historyStore)
         settingsViewModel = SettingsViewModel(inferenceService: inferenceService)
+
+        captureViewModel.$inferenceResult
+            .compactMap { $0 }
+            .removeDuplicates()
+            .sink { [weak self] result in
+                self?.historyViewModel.append(result: result)
+            }
+            .store(in: &cancellables)
+
+        resultViewModel.$result
+            .compactMap { $0 }
+            .removeDuplicates()
+            .sink { [weak self] result in
+                self?.historyViewModel.append(result: result)
+            }
+            .store(in: &cancellables)
     }
 }
