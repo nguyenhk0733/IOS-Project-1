@@ -9,12 +9,45 @@ public struct SettingsView: View {
 
     public var body: some View {
         Form {
+            Section(header: Text("Model management"), footer: Text(viewModel.modelInfo.remoteStatus)) {
+                HStack {
+                    Label("Bundled model", systemImage: "shippingbox")
+                    Spacer()
+                    VStack(alignment: .trailing) {
+                        Text(viewModel.modelInfo.bundledName)
+                            .font(.headline)
+                        Text("v\(viewModel.modelInfo.bundledVersion)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Link(destination: viewModel.modelInfo.remoteEndpoint) {
+                    Label("Remote update placeholder", systemImage: "network")
+                }
+                .tint(.accentColor)
+            }
+
             Section(header: Text("Preferences")) {
                 Toggle("Enable telemetry", isOn: $viewModel.settings.enableTelemetry)
                 Toggle("Auto-save history", isOn: $viewModel.settings.autoSaveHistory)
                 Picker("Compute unit", selection: $viewModel.settings.preferredComputeUnit) {
                     ForEach(ComputeUnit.allCases) { unit in
                         Text(unit.displayName).tag(unit)
+                    }
+                }
+            }
+
+            Section(header: Text("Feedback & privacy")) {
+                Toggle("Enable haptics", isOn: $viewModel.settings.enableHaptics)
+                Toggle("Privacy mode", isOn: $viewModel.settings.privacyModeEnabled)
+                    .help("When enabled, captures and metadata stay on device.")
+            }
+
+            Section(header: Text("Language")) {
+                Picker("App language", selection: $viewModel.settings.language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.displayName).tag(language)
                     }
                 }
             }
