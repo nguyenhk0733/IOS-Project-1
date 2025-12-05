@@ -10,9 +10,9 @@ public struct ImagePreprocessor {
         public var errorDescription: String? {
             switch self {
             case .invalidImageData:
-                return "Unable to decode image data"
+                return L10n.string("decode_image_failed")
             case .bufferCreationFailed:
-                return "Failed to create pixel buffer"
+                return L10n.string("pixel_buffer_failed")
             }
         }
     }

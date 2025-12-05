@@ -32,11 +32,11 @@ public struct InferenceBenchmark: Equatable {
     }
 
     public func formattedSummary() -> String {
-        guard let average = averageMilliseconds else { return "No benchmark yet" }
-        let stability = isStable ? "Stable" : "Warming up"
+        guard let average = averageMilliseconds else { return L10n.string("no_benchmark_yet") }
+        let stability = isStable ? L10n.string("stability_stable") : L10n.string("stability_warming")
         if let last = lastRunMilliseconds {
-            return String(format: "Avg %.1f ms · Last %.1f ms · %@", average, last, stability)
+            return L10n.formatted("benchmark_full_format", average, last, stability)
         }
-        return String(format: "Avg %.1f ms · %@", average, stability)
+        return L10n.formatted("benchmark_partial_format", average, stability)
     }
 }

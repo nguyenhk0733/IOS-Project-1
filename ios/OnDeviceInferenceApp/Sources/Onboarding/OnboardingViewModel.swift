@@ -29,8 +29,20 @@ public struct OnboardingPage: Identifiable, Equatable {
     }
 
     public static let defaultPages: [OnboardingPage] = [
-        .init(title: "Welcome", subtitle: "Run models entirely on-device.", systemImage: "sparkles"),
-        .init(title: "Capture", subtitle: "Collect input safely and privately.", systemImage: "camera.viewfinder"),
-        .init(title: "Results", subtitle: "Review inference output instantly.", systemImage: "wand.and.stars")
+        .init(
+            title: L10n.string("onboarding_page_welcome_title"),
+            subtitle: L10n.string("onboarding_page_welcome_subtitle"),
+            systemImage: "sparkles"
+        ),
+        .init(
+            title: L10n.string("onboarding_page_capture_title"),
+            subtitle: L10n.string("onboarding_page_capture_subtitle"),
+            systemImage: "camera.viewfinder"
+        ),
+        .init(
+            title: L10n.string("onboarding_page_results_title"),
+            subtitle: L10n.string("onboarding_page_results_subtitle"),
+            systemImage: "wand.and.stars"
+        )
     ]
 }

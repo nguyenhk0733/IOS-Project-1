@@ -64,7 +64,7 @@ public final class CaptureViewModel: ObservableObject {
     @MainActor
     public func runInferenceOnCapture() async {
         guard let capturedData else {
-            captureError = "No captured image available for inference"
+            captureError = L10n.string("no_capture_available")
             return
         }
 

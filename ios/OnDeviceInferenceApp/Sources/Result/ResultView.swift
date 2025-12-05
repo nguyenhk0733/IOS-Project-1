@@ -10,14 +10,14 @@ public struct ResultView: View {
 
     public var body: some View {
         VStack(spacing: 12) {
-            Text("Run inference on captured data and inspect results.")
+            L10n.text("result_description")
                 .multilineTextAlignment(.center)
                 .padding()
 
             if viewModel.isRunning {
-                ProgressView("Running inference…")
+                ProgressView(L10n.string("running_inference"))
             } else {
-                Button("Run Mock Inference") {
+                Button(L10n.string("run_mock_inference")) {
                     Task { await viewModel.runInference(with: Data("sample".utf8)) }
                 }
                 .buttonStyle(.borderedProminent)
@@ -25,13 +25,18 @@ public struct ResultView: View {
 
             if let result = viewModel.result {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Summary: \(result.summary)")
-                    Text("Confidence: \(Int(result.confidence * 100))%")
+                    Text(L10n.formatted("summary_format", result.summary))
+                    Text(L10n.formatted("confidence_format", Int(result.confidence * 100)))
                     if let timing = result.timingMilliseconds {
-                        Text(String(format: "Inference time: %.1f ms", timing))
+                        Text(L10n.formatted("inference_time_format", timing))
                     }
                     if !result.metadata.isEmpty {
-                        Text("Metadata: \(result.metadata.map { "\($0.key): \($0.value)" }.joined(separator: ", "))")
+                        Text(
+                            L10n.formatted(
+                                "metadata_format",
+                                result.metadata.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+                            )
+                        )
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -47,7 +52,7 @@ public struct ResultView: View {
             Spacer()
         }
         .padding()
-        .navigationTitle("Result")
+        .navigationTitle(L10n.string("result_navigation_title"))
     }
 }
 
