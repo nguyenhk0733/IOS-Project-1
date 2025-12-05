@@ -20,7 +20,14 @@ struct OnDeviceInferenceApp: App {
                         permissionsManager: permissionsManager
                     )
                 }
-                .tabItem { Label("Onboarding", systemImage: "sparkles") }
+                .tabItem {
+                    Label {
+                        L10n.text("tab_onboarding")
+                    } icon: {
+                        Image(systemName: "sparkles")
+                            .accessibilityHidden(true)
+                    }
+                }
                 .tag(AppViewModel.Tab.onboarding)
 
                 NavigationStack {
@@ -29,25 +36,53 @@ struct OnDeviceInferenceApp: App {
                         permissionsManager: permissionsManager
                     )
                 }
-                .tabItem { Label("Capture", systemImage: "camera") }
+                .tabItem {
+                    Label {
+                        L10n.text("tab_capture")
+                    } icon: {
+                        Image(systemName: "camera")
+                            .accessibilityHidden(true)
+                    }
+                }
                 .tag(AppViewModel.Tab.capture)
 
                 NavigationStack {
                     ResultView(viewModel: appViewModel.resultViewModel)
                 }
-                .tabItem { Label("Result", systemImage: "wand.and.stars") }
+                .tabItem {
+                    Label {
+                        L10n.text("tab_result")
+                    } icon: {
+                        Image(systemName: "wand.and.stars")
+                            .accessibilityHidden(true)
+                    }
+                }
                 .tag(AppViewModel.Tab.result)
 
                 NavigationStack {
                     HistoryView(viewModel: appViewModel.historyViewModel)
                 }
-                .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
+                .tabItem {
+                    Label {
+                        L10n.text("tab_history")
+                    } icon: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .accessibilityHidden(true)
+                    }
+                }
                 .tag(AppViewModel.Tab.history)
 
                 NavigationStack {
                     SettingsView(viewModel: appViewModel.settingsViewModel)
                 }
-                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tabItem {
+                    Label {
+                        L10n.text("tab_settings")
+                    } icon: {
+                        Image(systemName: "gearshape")
+                            .accessibilityHidden(true)
+                    }
+                }
                 .tag(AppViewModel.Tab.settings)
             }
             .tint(.appPrimary)

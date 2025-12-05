@@ -32,13 +32,13 @@ public enum OnDeviceInferenceError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .modelNotFound:
-            return "Compiled CoreML model not found in bundle."
+            return L10n.string("model_not_found")
         case .modelNotPrepared:
-            return "Model not prepared. Call prepareModel() before running inference."
+            return L10n.string("model_not_prepared")
         case .preprocessingFailed(let reason):
-            return "Preprocessing failed: \(reason)"
+            return L10n.formatted("preprocessing_failed_format", reason)
         case .inferenceFailed(let reason):
-            return "Inference failed: \(reason)"
+            return L10n.formatted("inference_failed_format", reason)
         }
     }
 }
@@ -165,7 +165,7 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
             )
         }
 
-        throw OnDeviceInferenceError.inferenceFailed("Unexpected model output")
+        throw OnDeviceInferenceError.inferenceFailed(L10n.string("unexpected_model_output"))
     }
 }
 

@@ -14,14 +14,15 @@ public struct OnboardingView: View {
         ScrollView {
             VStack(spacing: 24) {
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 44, weight: .semibold))
+                    .font(.system(.largeTitle, weight: .semibold))
                     .foregroundStyle(.appPrimary)
+                    .accessibilityHidden(true)
 
                 VStack(spacing: 8) {
-                    Text("OnDevice Inference")
+                    L10n.text("onboarding_title")
                         .appTitleStyle()
                         .multilineTextAlignment(.center)
-                    Text("Get set up to run models on your device with privacy-first permissions.")
+                    L10n.text("onboarding_description")
                         .appBodyStyle()
                         .multilineTextAlignment(.center)
                 }
@@ -49,7 +50,11 @@ public struct OnboardingView: View {
                 .tabViewStyle(.page(indexDisplayMode: .always))
 
                 Button(action: viewModel.advance) {
-                    Text(viewModel.currentIndex + 1 < viewModel.pages.count ? "Next" : "Start")
+                    Text(
+                        viewModel.currentIndex + 1 < viewModel.pages.count
+                            ? L10n.string("onboarding_next")
+                            : L10n.string("onboarding_start")
+                    )
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import Shared
 
 public enum CameraError: LocalizedError, Equatable {
     case configurationFailed(String)
@@ -90,7 +91,9 @@ public final class CameraSessionManager: NSObject, ObservableObject {
                 device.unlockForConfiguration()
             } catch {
                 DispatchQueue.main.async {
-                    self.error = .configurationFailed("Unable to focus: \(error.localizedDescription)")
+                    self.error = .configurationFailed(
+                        L10n.formatted("focus_failed_format", error.localizedDescription)
+                    )
                 }
             }
         }
@@ -102,7 +105,7 @@ public final class CameraSessionManager: NSObject, ObservableObject {
 
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             DispatchQueue.main.async { [weak self] in
-                self?.error = .configurationFailed("Back camera is unavailable")
+                self?.error = .configurationFailed(L10n.string("back_camera_unavailable"))
             }
             session.commitConfiguration()
             return
@@ -115,14 +118,16 @@ public final class CameraSessionManager: NSObject, ObservableObject {
                 currentDevice = device
             } else {
                 DispatchQueue.main.async { [weak self] in
-                    self?.error = .configurationFailed("Cannot add camera input")
+                    self?.error = .configurationFailed(L10n.string("cannot_add_camera_input"))
                 }
                 session.commitConfiguration()
                 return
             }
         } catch {
             DispatchQueue.main.async { [weak self] in
-                self?.error = .configurationFailed("Camera configuration failed: \(error.localizedDescription)")
+                self?.error = .configurationFailed(
+                    L10n.formatted("camera_configuration_failed_format", error.localizedDescription)
+                )
             }
             session.commitConfiguration()
             return
@@ -133,7 +138,7 @@ public final class CameraSessionManager: NSObject, ObservableObject {
             photoOutput.isHighResolutionCaptureEnabled = true
         } else {
             DispatchQueue.main.async { [weak self] in
-                self?.error = .configurationFailed("Cannot add photo output")
+                self?.error = .configurationFailed(L10n.string("cannot_add_photo_output"))
             }
             session.commitConfiguration()
             return
@@ -148,14 +153,16 @@ extension CameraSessionManager: AVCapturePhotoCaptureDelegate {
     public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         if let error {
             DispatchQueue.main.async { [weak self] in
-                self?.error = .captureFailed("Capture failed: \(error.localizedDescription)")
+                self?.error = .captureFailed(
+                    L10n.formatted("capture_failed_format", error.localizedDescription)
+                )
             }
             return
         }
 
         guard let data = photo.fileDataRepresentation() else {
             DispatchQueue.main.async { [weak self] in
-                self?.error = .captureFailed("Unable to read captured photo data")
+                self?.error = .captureFailed(L10n.string("read_photo_failed"))
             }
             return
         }
@@ -170,7 +177,9 @@ extension CameraSessionManager: AVCapturePhotoCaptureDelegate {
             }
         } catch {
             DispatchQueue.main.async { [weak self] in
-                self?.error = .captureFailed("Saving photo failed: \(error.localizedDescription)")
+                self?.error = .captureFailed(
+                    L10n.formatted("saving_photo_failed_format", error.localizedDescription)
+                )
             }
         }
     }
