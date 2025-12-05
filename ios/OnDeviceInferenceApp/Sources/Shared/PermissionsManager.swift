@@ -18,18 +18,18 @@ public enum PermissionType: String, CaseIterable {
     var title: String {
         switch self {
         case .camera:
-            return "Camera Access"
+            return L10n.string("permission_camera_title")
         case .photoLibrary:
-            return "Photo Library Access"
+            return L10n.string("permission_photo_title")
         }
     }
 
     var rationale: String {
         switch self {
         case .camera:
-            return "We use your camera to capture images for running on-device inference."
+            return L10n.string("permission_camera_rationale")
         case .photoLibrary:
-            return "We access your photo library so you can select images for analysis."
+            return L10n.string("permission_photo_rationale")
         }
     }
 
@@ -160,6 +160,7 @@ public struct PermissionRequestView: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Color.appPrimary)
                     .frame(width: 32, height: 32)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(type.title)
                         .font(.headline)
@@ -191,26 +192,26 @@ public struct PermissionRequestView: View {
     private func actionView(for status: PermissionState) -> some View {
         switch status {
         case .notDetermined:
-            Button("Allow") {
+            Button(L10n.string("allow_action")) {
                 Task { await permissionsManager.requestAccess(for: type) }
             }
             .buttonStyle(.borderedProminent)
             .tint(.appPrimary)
         case .authorized:
-            Button("Continue") {
+            Button(L10n.string("continue_action")) {
                 onContinue()
             }
             .buttonStyle(.bordered)
             .tint(.appPrimary)
         case .denied, .restricted:
             VStack(alignment: .leading, spacing: 6) {
-                Button("Open Settings") {
+                Button(L10n.string("open_settings_action")) {
                     permissionsManager.openSettings()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.appPrimary)
 
-                Text("Enable access in Settings to continue using this feature.")
+                Text(L10n.string("enable_access_reminder"))
                     .appBodyStyle()
             }
         }
@@ -219,13 +220,13 @@ public struct PermissionRequestView: View {
     private func statusDescription(for status: PermissionState) -> String {
         switch status {
         case .authorized:
-            return "Access granted"
+            return L10n.string("status_access_granted")
         case .denied:
-            return "Access denied"
+            return L10n.string("status_access_denied")
         case .restricted:
-            return "Access restricted"
+            return L10n.string("status_access_restricted")
         case .notDetermined:
-            return "Not requested yet"
+            return L10n.string("status_not_requested")
         }
     }
 

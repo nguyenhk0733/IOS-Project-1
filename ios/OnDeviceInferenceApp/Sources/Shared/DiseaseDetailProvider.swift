@@ -60,7 +60,7 @@ public struct DiseaseDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Detected Label")
+                    L10n.text("detected_label")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(detail.name.isEmpty ? result.summary : detail.name)
@@ -69,22 +69,22 @@ public struct DiseaseDetailView: View {
 
                 confidenceView
 
-                infoBlock(title: "Symptoms", text: detail.symptoms, icon: "bandage")
-                infoBlock(title: "Care Tips", text: detail.careTips, icon: "leaf")
+                infoBlock(title: L10n.string("symptoms"), text: detail.symptoms, icon: "bandage")
+                infoBlock(title: L10n.string("care_tips"), text: detail.careTips, icon: "leaf")
             }
             .padding()
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .navigationTitle("Disease details")
+        .navigationTitle(L10n.string("disease_details_title"))
     }
 
     private var confidenceView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Model confidence")
+            L10n.text("model_confidence")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             ProgressView(value: result.confidence) {
-                Text("\(Int(result.confidence * 100))% sure of this label")
+                Text(L10n.formatted("confidence_progress_format", Int(result.confidence * 100)))
                     .font(.subheadline)
             }
         }
@@ -92,7 +92,12 @@ public struct DiseaseDetailView: View {
 
     private func infoBlock(title: String, text: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: icon)
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: icon)
+                    .accessibilityHidden(true)
+            }
                 .font(.headline)
             Text(text)
                 .appBodyStyle()

@@ -10,9 +10,9 @@ public enum TextFormattingStyle: String, CaseIterable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .asEntered: return "Original"
-        case .uppercase: return "Uppercase"
-        case .titleCase: return "Title Case"
+        case .asEntered: return L10n.string("formatting_original")
+        case .uppercase: return L10n.string("formatting_uppercase")
+        case .titleCase: return L10n.string("formatting_titlecase")
         }
     }
 
@@ -37,9 +37,9 @@ public enum AppLanguage: String, CaseIterable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .system: return "System"
-        case .english: return "English"
-        case .vietnamese: return "Tiếng Việt"
+        case .system: return L10n.string("language_system")
+        case .english: return L10n.string("language_english")
+        case .vietnamese: return L10n.string("language_vietnamese")
         }
     }
 }
@@ -61,9 +61,18 @@ public struct TopUserPreference: Identifiable, Equatable {
 
     public static var featured: [TopUserPreference] {
         [
-            TopUserPreference(name: "Radiologist", capability: "Reviews scans with high accuracy"),
-            TopUserPreference(name: "Clinician", capability: "Quickly triages bedside captures"),
-            TopUserPreference(name: "Researcher", capability: "Explores edge cases and anomalies")
+            TopUserPreference(
+                name: L10n.string("top_user_radiologist"),
+                capability: L10n.string("top_user_radiologist_capability")
+            ),
+            TopUserPreference(
+                name: L10n.string("top_user_clinician"),
+                capability: L10n.string("top_user_clinician_capability")
+            ),
+            TopUserPreference(
+                name: L10n.string("top_user_researcher"),
+                capability: L10n.string("top_user_researcher_capability")
+            )
         ]
     }
 }
@@ -103,7 +112,7 @@ public struct ModelInfo: Equatable {
         bundledName: String = "Model",
         bundledVersion: String = "1.0",
         remoteEndpoint: URL = URL(string: "https://plant-disease-api-qm2p.onrender.com")!,
-        remoteStatus: String = "Remote update placeholder"
+        remoteStatus: String = L10n.string("remote_update_placeholder")
     ) {
         self.bundledName = bundledName
         self.bundledVersion = bundledVersion
@@ -121,10 +130,10 @@ public enum ComputeUnit: String, CaseIterable, Identifiable {
     public var id: String { rawValue }
     public var displayName: String {
         switch self {
-        case .auto: return "Auto"
-        case .cpuOnly: return "CPU"
-        case .neuralEngine: return "Neural Engine"
-        case .gpu: return "GPU"
+        case .auto: return L10n.string("compute_auto")
+        case .cpuOnly: return L10n.string("compute_cpu")
+        case .neuralEngine: return L10n.string("compute_neural")
+        case .gpu: return L10n.string("compute_gpu")
         }
     }
 }
@@ -162,7 +171,7 @@ public final class SettingsViewModel: ObservableObject {
     @MainActor
     public func runBenchmarkProbe() async {
         guard let inferenceService else {
-            benchmarkError = "Inference service unavailable"
+            benchmarkError = L10n.string("inference_service_unavailable")
             return
         }
 

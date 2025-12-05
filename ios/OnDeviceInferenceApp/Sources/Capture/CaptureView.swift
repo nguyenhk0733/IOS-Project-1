@@ -21,7 +21,7 @@ public struct CaptureView: View {
     public var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("Capture input to run on-device inference.")
+                L10n.text("capture_description")
                     .appBodyStyle()
                     .multilineTextAlignment(.center)
 
@@ -36,9 +36,9 @@ public struct CaptureView: View {
 
                 // Chuẩn bị model
                 if viewModel.isPreparingModel {
-                    ProgressView("Preparing model…")
+                    ProgressView(L10n.string("preparing_model"))
                 } else {
-                    Button("Prepare Model") {
+                    Button(L10n.string("prepare_model_button")) {
                         Task { await viewModel.prepareModel() }
                     }
                     .buttonStyle(.borderedProminent)
@@ -59,14 +59,19 @@ public struct CaptureView: View {
 
                 // Khi đã có dữ liệu ảnh để suy luận
                 if viewModel.capturedData != nil {
-                    Label("Data ready for inference", systemImage: "checkmark.seal")
+                    Label {
+                        L10n.text("data_ready_label")
+                    } icon: {
+                        Image(systemName: "checkmark.seal")
+                            .accessibilityHidden(true)
+                    }
                         .foregroundStyle(.green)
 
                     // Trạng thái chạy inference
                     if viewModel.isRunningInference {
-                        ProgressView("Running inference…")
+                        ProgressView(L10n.string("running_inference"))
                     } else {
-                        Button("Run On-Device Inference") {
+                        Button(L10n.string("run_inference_button")) {
                             Task { await viewModel.runInferenceOnCapture() }
                         }
                         .buttonStyle(.borderedProminent)
@@ -76,15 +81,20 @@ public struct CaptureView: View {
                     // Kết quả suy luận
                     if let inferenceResult = viewModel.inferenceResult {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Prediction: \(inferenceResult.summary)")
-                            Text("Confidence: \(Int(inferenceResult.confidence * 100))%")
+                            Text(L10n.formatted("prediction_format", inferenceResult.summary))
+                            Text(L10n.formatted("confidence_format", Int(inferenceResult.confidence * 100)))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
 
                             NavigationLink {
                                 DiseaseDetailView(result: inferenceResult)
                             } label: {
-                                Label("View disease details", systemImage: "list.bullet.clipboard")
+                                Label {
+                                    L10n.text("view_disease_details")
+                                } icon: {
+                                    Image(systemName: "list.bullet.clipboard")
+                                        .accessibilityHidden(true)
+                                }
                                     .font(.subheadline)
                             }
                             .padding(.top, 4)
@@ -93,7 +103,12 @@ public struct CaptureView: View {
                                 configureShareItems(for: inferenceResult)
                                 isPresentingShareSheet = true
                             } label: {
-                                Label("Share result", systemImage: "square.and.arrow.up")
+                                Label {
+                                    L10n.text("share_result")
+                                } icon: {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .accessibilityHidden(true)
+                                }
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
@@ -111,7 +126,7 @@ public struct CaptureView: View {
             .padding()
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .navigationTitle("Capture")
+        .navigationTitle(L10n.string("capture_navigation_title"))
         .onAppear { permissionsManager.refreshStatuses() }
         .sheet(isPresented: $isShowingCamera) {
             CameraCaptureView(permissionsManager: permissionsManager) { url in
@@ -154,7 +169,12 @@ public struct CaptureView: View {
                 Button {
                     isShowingCamera = true
                 } label: {
-                    Label("Take Photo", systemImage: "camera.viewfinder")
+                    Label {
+                        L10n.text("take_photo")
+                    } icon: {
+                        Image(systemName: "camera.viewfinder")
+                            .accessibilityHidden(true)
+                    }
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -165,7 +185,12 @@ public struct CaptureView: View {
                 Button {
                     handlePhotoPickerTapped()
                 } label: {
-                    Label("Choose from Library", systemImage: "photo")
+                    Label {
+                        L10n.text("choose_from_library")
+                    } icon: {
+                        Image(systemName: "photo")
+                            .accessibilityHidden(true)
+                    }
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -173,13 +198,13 @@ public struct CaptureView: View {
             }
 
             if let lastURL = viewModel.lastCapturedImageURL {
-                Text("Last capture saved to: \(lastURL.lastPathComponent)")
+                Text(L10n.formatted("last_capture_saved_format", lastURL.lastPathComponent))
                     .appBodyStyle()
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
             }
 
-            Button("Mock Capture Input") {
+            Button(L10n.string("mock_capture_input")) {
                 viewModel.ingestCapturedData(Data("sample".utf8))
             }
             .buttonStyle(.bordered)
@@ -233,7 +258,7 @@ public struct CaptureView: View {
             items.append(placeholder)
         }
 
-        items.append("Label: \(result.summary) | Confidence: \(Int(result.confidence * 100))%")
+        items.append(L10n.formatted("share_summary_format", result.summary, Int(result.confidence * 100)))
         shareItems = items
     }
 }
