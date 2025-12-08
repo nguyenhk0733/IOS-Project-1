@@ -81,6 +81,14 @@ let package = Package(
             resources: [
                 .process("Sources/Shared/Resources")
             ]
+        ),
+        .testTarget(
+            name: "ModelIOTests",
+            dependencies: ["Shared"],
+            path: "Tests/ModelIOTests",
+            resources: [
+                .process("TestImages")
+            ]
         )
     ]
 )
