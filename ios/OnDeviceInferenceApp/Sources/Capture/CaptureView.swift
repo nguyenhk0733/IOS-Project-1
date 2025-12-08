@@ -12,6 +12,7 @@ public struct CaptureView: View {
     @State private var selectedPickerItem: PhotosPickerItem?
     @State private var isPresentingShareSheet = false
     @State private var shareItems: [Any] = []
+    @State private var shouldAnimateResult = false
 
     public init(viewModel: CaptureViewModel, permissionsManager: PermissionsManager) {
         self.viewModel = viewModel
@@ -120,6 +121,11 @@ public struct CaptureView: View {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .fill(Color.appBackground)
                         )
+                        // Fade + scale to highlight that a fresh result arrived.
+                        .opacity(shouldAnimateResult ? 1 : 0)
+                        .scaleEffect(shouldAnimateResult ? 1 : 0.95)
+                        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: shouldAnimateResult)
+                        .onAppear { animateInferenceResultAppearance() }
                     }
                 }
             }
@@ -144,6 +150,16 @@ public struct CaptureView: View {
         .onChange(of: selectedPickerItem) { newValue in
             guard let newValue else { return }
             Task { await loadPickedItem(newValue) }
+        }
+        // Kick off the result animation whenever a new inference is set.
+        .onChange(of: viewModel.inferenceResult) { newValue in
+            if newValue != nil {
+                animateInferenceResultAppearance()
+            } else {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                    shouldAnimateResult = false
+                }
+            }
         }
     }
 
@@ -260,6 +276,14 @@ public struct CaptureView: View {
 
         items.append(L10n.formatted("share_summary_format", result.summary, Int(result.confidence * 100)))
         shareItems = items
+    }
+
+    /// Resets and replays the result card animation when a new prediction arrives.
+    private func animateInferenceResultAppearance() {
+        shouldAnimateResult = false
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+            shouldAnimateResult = true
+        }
     }
 }
 

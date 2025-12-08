@@ -1,5 +1,6 @@
 import SwiftUI
 import Shared
+import UIKit
 
 public struct CameraCaptureView: View {
     @Environment(\.dismiss) private var dismiss
@@ -37,7 +38,10 @@ public struct CameraCaptureView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             }
 
-                            Button(action: cameraManager.capturePhoto) {
+                            Button(action: {
+                                triggerCaptureHaptic()
+                                cameraManager.capturePhoto()
+                            }) {
                                 Circle()
                                     .fill(.white)
                                     .frame(width: 78, height: 78)
@@ -79,6 +83,13 @@ public struct CameraCaptureView: View {
         case .denied, .restricted:
             break
         }
+    }
+
+    /// Light haptic when the capture button is tapped so the user feels immediate feedback.
+    private func triggerCaptureHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        generator.impactOccurred()
     }
 }
 
