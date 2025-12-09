@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
@@ -15,14 +16,21 @@ from fastapi.middleware.cors import CORSMiddleware
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def _get_model_version() -> str:
+    """Return the configured model version (defaults to ``v1``)."""
+
+    return os.getenv("MODEL_VERSION", "v1")
+
+
 @lru_cache(maxsize=1)
 def load_model() -> tf.keras.Model:
     """Load and cache the trained TensorFlow model."""
 
-    model_path = ROOT / "models" / "trained_model.h5"
+    model_path = ROOT / "models" / _get_model_version() / "trained_model.h5"
     if not model_path.exists():
         raise FileNotFoundError(
-            "trained_model.h5 not found. Ensure the model artifact is placed in ./models/"
+            f"trained_model.h5 not found at {model_path}. "
+            "Ensure the versioned model artifact exists under ./models/<version>/"
         )
 
     return tf.keras.models.load_model(model_path)
