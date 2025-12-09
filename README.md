@@ -78,7 +78,8 @@ Sử dụng `render.yaml` ở gốc repo để tạo Web Service từ Render:
    - Build: `pip install -r requirements.txt`
    - Start: `uvicorn api.api_server:app --host 0.0.0.0 --port $PORT`
    - Env: `PYTHONPATH=/opt/render/project/src`
-3. Đảm bảo tệp model `models/trained_model.h5` có trong repo hoặc được tải ở bước build.
+3. Đảm bảo thư mục model versioned tồn tại, ví dụ: `models/v1/trained_model.h5`.
+   - Đặt biến môi trường `MODEL_VERSION` (mặc định `v1`) để Render tải đúng phiên bản.
 4. Endpoint health check: `/health`; dự đoán: `/predict`.
 
 Nếu cần chỉnh plan/tên service, sửa trực tiếp trong `render.yaml` trước khi deploy.

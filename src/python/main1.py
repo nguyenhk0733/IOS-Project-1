@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +22,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+ROOT = Path(__file__).resolve().parents[2]
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v1")
+MODEL_DIR = ROOT / "models" / MODEL_VERSION
 ASSETS_DIR = Path("assets")
 DB_PATH = Path("data/predictions.db")
 UPLOAD_DIR = Path("data/uploads")
@@ -231,7 +235,14 @@ def load_recent_predictions(limit: int = 8):
 # =========================
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model('trained_model.h5')
+    model_path = MODEL_DIR / "trained_model.h5"
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"trained_model.h5 not found at {model_path}. "
+            "Ensure the versioned model artifact exists under ./models/<version>/"
+        )
+
+    return tf.keras.models.load_model(model_path)
 
 model = load_model()
 
