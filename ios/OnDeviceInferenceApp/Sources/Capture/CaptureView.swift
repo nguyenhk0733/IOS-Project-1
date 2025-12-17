@@ -1,22 +1,15 @@
 import SwiftUI
 import PhotosUI
 import Shared
-import UIKit
 
 public struct CaptureView: View {
     @ObservedObject var viewModel: CaptureViewModel
-    @ObservedObject var permissionsManager: PermissionsManager
 
-    @State private var isShowingCamera = false
-    @State private var isPresentingPhotoPicker = false
     @State private var selectedPickerItem: PhotosPickerItem?
-    @State private var isPresentingShareSheet = false
-    @State private var shareItems: [Any] = []
     @State private var shouldAnimateResult = false
 
-    public init(viewModel: CaptureViewModel, permissionsManager: PermissionsManager) {
+    public init(viewModel: CaptureViewModel) {
         self.viewModel = viewModel
-        self.permissionsManager = permissionsManager
     }
 
     public var body: some View {
@@ -30,8 +23,8 @@ public struct CaptureView: View {
                 permissionStack
 
                 // Actions để chụp / chọn ảnh
-                if permissionsManager.cameraStatus == .authorized ||
-                    permissionsManager.photoLibraryStatus == .authorized {
+                if viewModel.permissionsManager.cameraStatus == .authorized ||
+                    viewModel.permissionsManager.photoLibraryStatus == .authorized {
                     captureActions
                 }
 
@@ -101,8 +94,7 @@ public struct CaptureView: View {
                             .padding(.top, 4)
 
                             Button {
-                                configureShareItems(for: inferenceResult)
-                                isPresentingShareSheet = true
+                                viewModel.presentShare(for: inferenceResult)
                             } label: {
                                 Label {
                                     L10n.text("share_result")
@@ -133,23 +125,23 @@ public struct CaptureView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .navigationTitle(L10n.string("capture_navigation_title"))
-        .onAppear { permissionsManager.refreshStatuses() }
-        .sheet(isPresented: $isShowingCamera) {
-            CameraCaptureView(permissionsManager: permissionsManager) { url in
-                viewModel.ingestImage(at: url)
+        .onAppear { viewModel.refreshPermissions() }
+        .sheet(isPresented: $viewModel.isShowingCamera) {
+            CameraCaptureView(permissionsManager: viewModel.permissionsManager) { url in
+                viewModel.handleCameraCapture(at: url)
             }
         }
-        .sheet(isPresented: $isPresentingShareSheet) {
-            ShareSheet(activityItems: shareItems)
+        .sheet(isPresented: $viewModel.isPresentingShareSheet) {
+            ShareSheet(activityItems: viewModel.shareItems)
         }
         .photosPicker(
-            isPresented: $isPresentingPhotoPicker,
+            isPresented: $viewModel.isPresentingPhotoPicker,
             selection: $selectedPickerItem,
             matching: .images
         )
         .onChange(of: selectedPickerItem) { newValue in
             guard let newValue else { return }
-            Task { await loadPickedItem(newValue) }
+            Task { await viewModel.handlePickedItem(newValue) }
         }
         // Kick off the result animation whenever a new inference is set.
         .onChange(of: viewModel.inferenceResult) { newValue in
@@ -167,12 +159,12 @@ public struct CaptureView: View {
 
     @ViewBuilder
     private var permissionStack: some View {
-        if permissionsManager.cameraStatus != .authorized {
-            PermissionRequestView(permissionsManager: permissionsManager, type: .camera)
+        if viewModel.permissionsManager.cameraStatus != .authorized {
+            PermissionRequestView(permissionsManager: viewModel.permissionsManager, type: .camera)
         }
 
-        if permissionsManager.photoLibraryStatus != .authorized {
-            PermissionRequestView(permissionsManager: permissionsManager, type: .photoLibrary)
+        if viewModel.permissionsManager.photoLibraryStatus != .authorized {
+            PermissionRequestView(permissionsManager: viewModel.permissionsManager, type: .photoLibrary)
         }
     }
 
@@ -181,9 +173,9 @@ public struct CaptureView: View {
     @ViewBuilder
     private var captureActions: some View {
         VStack(spacing: 12) {
-            if permissionsManager.cameraStatus == .authorized {
+            if viewModel.permissionsManager.cameraStatus == .authorized {
                 Button {
-                    isShowingCamera = true
+                    viewModel.presentCameraCapture()
                 } label: {
                     Label {
                         L10n.text("take_photo")
@@ -197,9 +189,9 @@ public struct CaptureView: View {
                 .tint(.appPrimary)
             }
 
-            if permissionsManager.photoLibraryStatus == .authorized {
+            if viewModel.permissionsManager.photoLibraryStatus == .authorized {
                 Button {
-                    handlePhotoPickerTapped()
+                    Task { await viewModel.handlePhotoPickerTapped() }
                 } label: {
                     Label {
                         L10n.text("choose_from_library")
@@ -228,56 +220,6 @@ public struct CaptureView: View {
         }
     }
 
-    // MARK: - Helpers
-
-    private func handlePhotoPickerTapped() {
-        switch permissionsManager.photoLibraryStatus {
-        case .authorized:
-            isPresentingPhotoPicker = true
-        case .notDetermined:
-            Task {
-                await permissionsManager.requestPhotoLibraryAccess()
-                if permissionsManager.photoLibraryStatus == .authorized {
-                    isPresentingPhotoPicker = true
-                }
-            }
-        case .denied, .restricted:
-            break
-        }
-    }
-
-    private func loadPickedItem(_ item: PhotosPickerItem) async {
-        do {
-            if let data = try await item.loadTransferable(type: Data.self) {
-                let preferredExtension =
-                    item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"
-                await MainActor.run {
-                    viewModel.ingestImageData(
-                        data,
-                        preferredExtension: preferredExtension
-                    )
-                }
-            }
-        } catch {
-            await MainActor.run {
-                viewModel.recordCaptureError(error.localizedDescription)
-            }
-        }
-    }
-
-    private func configureShareItems(for result: InferenceResult) {
-        var items: [Any] = []
-
-        if let data = viewModel.capturedData, let uiImage = UIImage(data: data) {
-            items.append(uiImage)
-        } else if let placeholder = UIImage(systemName: "leaf.circle") {
-            items.append(placeholder)
-        }
-
-        items.append(L10n.formatted("share_summary_format", result.summary, Int(result.confidence * 100)))
-        shareItems = items
-    }
-
     /// Resets and replays the result card animation when a new prediction arrives.
     private func animateInferenceResultAppearance() {
         shouldAnimateResult = false
@@ -290,8 +232,7 @@ public struct CaptureView: View {
 #Preview {
     NavigationStack {
         CaptureView(
-            viewModel: CaptureViewModel(),
-            permissionsManager: PermissionsManager()
+            viewModel: CaptureViewModel()
         )
     }
 }
