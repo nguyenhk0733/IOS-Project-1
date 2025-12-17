@@ -8,8 +8,14 @@ import Shared
 
 @main
 struct OnDeviceInferenceApp: App {
-    @StateObject private var appViewModel = AppViewModel()
-    @StateObject private var permissionsManager = PermissionsManager()
+    @StateObject private var appViewModel: AppViewModel
+    @StateObject private var permissionsManager: PermissionsManager
+
+    init() {
+        let permissionsManager = PermissionsManager()
+        _permissionsManager = StateObject(wrappedValue: permissionsManager)
+        _appViewModel = StateObject(wrappedValue: AppViewModel(permissionsManager: permissionsManager))
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -32,8 +38,7 @@ struct OnDeviceInferenceApp: App {
 
                 NavigationStack {
                     CaptureView(
-                        viewModel: appViewModel.captureViewModel,
-                        permissionsManager: permissionsManager
+                        viewModel: appViewModel.captureViewModel
                     )
                 }
                 .tabItem {

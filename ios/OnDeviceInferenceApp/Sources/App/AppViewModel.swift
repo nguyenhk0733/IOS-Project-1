@@ -19,6 +19,7 @@ final class AppViewModel: ObservableObject {
     @Published var selectedTab: Tab = .onboarding
 
     private let inferenceService: OnDeviceInferenceServiceProtocol
+    let permissionsManager: PermissionsManager
 
     let onboardingViewModel = OnboardingViewModel()
     let captureViewModel: CaptureViewModel
@@ -30,10 +31,15 @@ final class AppViewModel: ObservableObject {
 
     init(
         inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService(),
-        historyStore: HistoryStoring = HistoryStore.shared
+        historyStore: HistoryStoring = HistoryStore.shared,
+        permissionsManager: PermissionsManager = PermissionsManager()
     ) {
         self.inferenceService = inferenceService
-        captureViewModel = CaptureViewModel(inferenceService: inferenceService)
+        self.permissionsManager = permissionsManager
+        captureViewModel = CaptureViewModel(
+            inferenceService: inferenceService,
+            permissionsManager: permissionsManager
+        )
         resultViewModel = ResultViewModel(inferenceService: inferenceService)
         historyViewModel = HistoryViewModel(store: historyStore)
         settingsViewModel = SettingsViewModel(inferenceService: inferenceService)
