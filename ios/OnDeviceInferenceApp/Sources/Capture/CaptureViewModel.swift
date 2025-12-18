@@ -18,13 +18,13 @@ public final class CaptureViewModel: ObservableObject {
     @Published public private(set) var shareItems: [Any] = []
 
     public let permissionsManager: PermissionsManager
-    private let inferenceService: OnDeviceInferenceServiceProtocol
+    private let repository: InferenceRepositoryProtocol
 
     public init(
-        inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService(),
+        repository: InferenceRepositoryProtocol = MockInferenceRepository(),
         permissionsManager: PermissionsManager = PermissionsManager()
     ) {
-        self.inferenceService = inferenceService
+        self.repository = repository
         self.permissionsManager = permissionsManager
     }
 
@@ -33,7 +33,7 @@ public final class CaptureViewModel: ObservableObject {
         isPreparingModel = true
         preparationError = nil
         do {
-            try await inferenceService.prepareModel()
+            try await repository.prepareModel()
         } catch {
             preparationError = error.localizedDescription
         }
@@ -146,8 +146,8 @@ public final class CaptureViewModel: ObservableObject {
         captureError = nil
 
         do {
-            try await inferenceService.prepareModel()
-            let result = try await inferenceService.runInference(on: capturedData)
+            try await repository.prepareModel()
+            let result = try await repository.runInference(on: capturedData)
             inferenceResult = result
         } catch {
             captureError = error.localizedDescription

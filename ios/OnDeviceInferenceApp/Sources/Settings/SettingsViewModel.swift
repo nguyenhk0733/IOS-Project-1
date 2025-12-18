@@ -146,31 +146,31 @@ public final class SettingsViewModel: ObservableObject {
     @Published public private(set) var benchmarkError: String?
     @Published public private(set) var modelInfo: ModelInfo
 
-    private let inferenceService: OnDeviceInferenceServiceProtocol?
+    private let repository: InferenceRepositoryProtocol?
     private let benchmarkPayload = Data("benchmark-probe".utf8)
 
     public init(
         settings: InferenceSettings = .init(),
         formattingStyle: TextFormattingStyle = .titleCase,
         topUsers: [TopUserPreference] = TopUserPreference.featured,
-        inferenceService: OnDeviceInferenceServiceProtocol? = nil,
+        repository: InferenceRepositoryProtocol? = nil,
         modelInfo: ModelInfo = ModelInfo()
     ) {
         self.settings = settings
         self.formattingStyle = formattingStyle
         self.topUsers = topUsers
-        self.inferenceService = inferenceService
+        self.repository = repository
         self.modelInfo = modelInfo
-        self.benchmark = inferenceService?.benchmarkMetrics() ?? InferenceBenchmark()
+        self.benchmark = repository?.benchmarkMetrics() ?? InferenceBenchmark()
     }
 
     public func refreshBenchmark() {
-        benchmark = inferenceService?.benchmarkMetrics() ?? benchmark
+        benchmark = repository?.benchmarkMetrics() ?? benchmark
     }
 
     @MainActor
     public func runBenchmarkProbe() async {
-        guard let inferenceService else {
+        guard let repository else {
             benchmarkError = L10n.string("inference_service_unavailable")
             return
         }
@@ -178,9 +178,9 @@ public final class SettingsViewModel: ObservableObject {
         benchmarkError = nil
 
         do {
-            try await inferenceService.prepareModel()
-            _ = try await inferenceService.runInference(on: benchmarkPayload)
-            benchmark = inferenceService.benchmarkMetrics()
+            try await repository.prepareModel()
+            _ = try await repository.runInference(on: benchmarkPayload)
+            benchmark = repository.benchmarkMetrics()
         } catch {
             benchmarkError = error.localizedDescription
         }

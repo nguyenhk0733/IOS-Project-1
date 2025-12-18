@@ -58,6 +58,6 @@ public struct ResultView: View {
 
 #Preview {
     NavigationStack {
-        ResultView(viewModel: ResultViewModel())
+        ResultView(viewModel: ResultViewModel(repository: MockInferenceRepository()))
     }
 }

@@ -232,7 +232,7 @@ public struct CaptureView: View {
 #Preview {
     NavigationStack {
         CaptureView(
-            viewModel: CaptureViewModel()
+            viewModel: CaptureViewModel(repository: MockInferenceRepository())
         )
     }
 }
