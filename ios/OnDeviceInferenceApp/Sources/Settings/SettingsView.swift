@@ -114,6 +114,6 @@ public struct SettingsView: View {
 
 #Preview {
     NavigationStack {
-        SettingsView(viewModel: SettingsViewModel())
+        SettingsView(viewModel: SettingsViewModel(repository: MockInferenceRepository()))
     }
 }

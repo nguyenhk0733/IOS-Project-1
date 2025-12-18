@@ -18,7 +18,7 @@ final class AppViewModel: ObservableObject {
 
     @Published var selectedTab: Tab = .onboarding
 
-    private let inferenceService: OnDeviceInferenceServiceProtocol
+    private let repository: InferenceRepositoryProtocol
     let permissionsManager: PermissionsManager
 
     let onboardingViewModel = OnboardingViewModel()
@@ -30,19 +30,18 @@ final class AppViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService(),
-        historyStore: HistoryStoring = HistoryStore.shared,
+        repository: InferenceRepositoryProtocol = OnDeviceInferenceRepository(),
         permissionsManager: PermissionsManager = PermissionsManager()
     ) {
-        self.inferenceService = inferenceService
+        self.repository = repository
         self.permissionsManager = permissionsManager
         captureViewModel = CaptureViewModel(
-            inferenceService: inferenceService,
+            repository: repository,
             permissionsManager: permissionsManager
         )
-        resultViewModel = ResultViewModel(inferenceService: inferenceService)
-        historyViewModel = HistoryViewModel(store: historyStore)
-        settingsViewModel = SettingsViewModel(inferenceService: inferenceService)
+        resultViewModel = ResultViewModel(repository: repository)
+        historyViewModel = HistoryViewModel(repository: repository)
+        settingsViewModel = SettingsViewModel(repository: repository)
 
         captureViewModel.$inferenceResult
             .compactMap { $0 }

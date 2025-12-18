@@ -90,8 +90,11 @@ public struct HistoryView: View {
 
 #Preview {
     NavigationStack {
-        HistoryView(viewModel: HistoryViewModel(entries: [
-            HistoryEntry(id: UUID(), timestamp: Date(), result: InferenceResult(summary: "Preview", confidence: 0.75))
-        ]))
+        HistoryView(viewModel: HistoryViewModel(
+            entries: [
+                HistoryEntry(id: UUID(), timestamp: Date(), result: InferenceResult(summary: "Preview", confidence: 0.75))
+            ],
+            repository: MockInferenceRepository()
+        ))
     }
 }
