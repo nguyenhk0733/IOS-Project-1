@@ -6,10 +6,10 @@ public final class ResultViewModel: ObservableObject {
     @Published public private(set) var isRunning = false
     @Published public private(set) var errorMessage: String? = nil
 
-    private let inferenceService: OnDeviceInferenceServiceProtocol
+    private let repository: InferenceRepositoryProtocol
 
-    public init(inferenceService: OnDeviceInferenceServiceProtocol = OnDeviceInferenceService()) {
-        self.inferenceService = inferenceService
+    public init(repository: InferenceRepositoryProtocol = MockInferenceRepository()) {
+        self.repository = repository
     }
 
     @MainActor
@@ -17,7 +17,7 @@ public final class ResultViewModel: ObservableObject {
         isRunning = true
         errorMessage = nil
         do {
-            result = try await inferenceService.runInference(on: data)
+            result = try await repository.runInference(on: data)
         } catch {
             errorMessage = error.localizedDescription
         }
