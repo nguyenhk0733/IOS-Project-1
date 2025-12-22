@@ -4,6 +4,10 @@ import Shared
 final class StubInferenceRepository: InferenceRepositoryProtocol {
     var shouldThrowOnPrepare = false
     var runInferenceHandler: ((Data) throws -> InferenceResult)?
+    var runInferenceError: Error?
+    var fetchHistoryError: Error?
+    var saveHistoryError: Error?
+    var updateFavoriteError: Error?
     var storedEntries: [HistoryEntry]
     var benchmarkValue: InferenceBenchmark
 
@@ -31,6 +35,9 @@ final class StubInferenceRepository: InferenceRepositoryProtocol {
             }
             return result
         }
+        if let runInferenceError {
+            throw runInferenceError
+        }
         return InferenceResult(summary: "mock", confidence: 0.9, metadata: [:], timingMilliseconds: 10)
     }
 
@@ -39,17 +46,26 @@ final class StubInferenceRepository: InferenceRepositoryProtocol {
     }
 
     func fetchHistory() throws -> [HistoryEntry] {
+        if let fetchHistoryError {
+            throw fetchHistoryError
+        }
         storedEntries
     }
 
     @discardableResult
     func saveHistory(_ result: InferenceResult, isFavorite: Bool) throws -> HistoryEntry {
+        if let saveHistoryError {
+            throw saveHistoryError
+        }
         let entry = HistoryEntry(id: UUID(), timestamp: Date(), result: result, isFavorite: isFavorite)
         storedEntries.insert(entry, at: 0)
         return entry
     }
 
     func updateFavorite(for id: UUID, isFavorite: Bool) throws {
+        if let updateFavoriteError {
+            throw updateFavoriteError
+        }
         guard let index = storedEntries.firstIndex(where: { $0.id == id }) else { return }
         let entry = storedEntries[index]
         storedEntries[index] = HistoryEntry(

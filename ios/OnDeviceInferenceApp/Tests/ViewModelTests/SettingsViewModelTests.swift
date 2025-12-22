@@ -37,4 +37,21 @@ final class SettingsViewModelTests: XCTestCase {
 
         XCTAssertNotNil(sut.benchmarkError)
     }
+
+    func testRunBenchmarkProbeFailureKeepsBenchmarkAndSetsError() async {
+        var benchmark = InferenceBenchmark()
+        benchmark.record(durationMilliseconds: 10)
+        let repository = StubInferenceRepository(
+            benchmarkValue: benchmark,
+            runInferenceHandler: { _ in throw NSError(domain: "inference", code: -1) }
+        )
+        repository.shouldThrowOnPrepare = true
+        let sut = SettingsViewModel(repository: repository)
+        let initialBenchmark = sut.benchmark
+
+        await sut.runBenchmarkProbe()
+
+        XCTAssertEqual(sut.benchmark, initialBenchmark)
+        XCTAssertNotNil(sut.benchmarkError)
+    }
 }

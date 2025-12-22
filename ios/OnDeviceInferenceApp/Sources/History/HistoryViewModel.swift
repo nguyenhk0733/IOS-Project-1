@@ -17,7 +17,9 @@ public final class HistoryViewModel: ObservableObject {
 
     public func loadPersistedEntries() {
         do {
-            entries = try repository.fetchHistory()
+            entries = try repository
+                .fetchHistory()
+                .sorted(by: { $0.timestamp > $1.timestamp })
         } catch {
             errorMessage = error.localizedDescription
         }

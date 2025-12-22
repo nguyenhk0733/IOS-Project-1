@@ -36,4 +36,28 @@ final class HistoryViewModelTests: XCTestCase {
         XCTAssertEqual(sut.entries.first?.isFavorite, true)
         XCTAssertNil(sut.errorMessage)
     }
+
+    func testLoadPersistedEntriesSortsNewestFirst() {
+        let older = HistoryEntry(id: UUID(), timestamp: Date(timeIntervalSinceNow: -10), result: .init(summary: "old", confidence: 0.1), isFavorite: false)
+        let newer = HistoryEntry(id: UUID(), timestamp: Date(), result: .init(summary: "new", confidence: 0.9), isFavorite: false)
+        let repository = StubInferenceRepository(storedEntries: [older, newer])
+
+        let sut = HistoryViewModel(repository: repository)
+
+        XCTAssertEqual(sut.entries.first?.id, newer.id)
+        XCTAssertNil(sut.errorMessage)
+    }
+
+    func testToggleFavoriteFailureDoesNotCorruptEntries() {
+        let result = InferenceResult(summary: "item", confidence: 0.3)
+        let entry = HistoryEntry(id: UUID(), timestamp: Date(), result: result, isFavorite: false)
+        let repository = StubInferenceRepository(storedEntries: [entry])
+        repository.updateFavoriteError = NSError(domain: "update", code: -1)
+        let sut = HistoryViewModel(entries: [entry], repository: repository)
+
+        sut.toggleFavorite(for: entry)
+
+        XCTAssertEqual(sut.entries.first?.isFavorite, false)
+        XCTAssertNotNil(sut.errorMessage)
+    }
 }
