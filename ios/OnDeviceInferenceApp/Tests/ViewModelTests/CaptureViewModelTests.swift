@@ -43,6 +43,31 @@ final class CaptureViewModelTests: XCTestCase {
         XCTAssertNil(sut.captureError)
     }
 
+    func testRunInferenceOnCaptureWithoutDataSetsError() async {
+        let permissions = StubPermissionsManager()
+        let sut = CaptureViewModel(repository: StubInferenceRepository(), permissionsManager: permissions)
+
+        await sut.runInferenceOnCapture()
+
+        XCTAssertNil(sut.inferenceResult)
+        XCTAssertNotNil(sut.captureError)
+        XCTAssertFalse(sut.isRunningInference)
+    }
+
+    func testRunInferenceOnCaptureHandlesRepositoryFailure() async {
+        let repository = StubInferenceRepository()
+        repository.shouldThrowOnPrepare = true
+        let permissions = StubPermissionsManager()
+        let sut = CaptureViewModel(repository: repository, permissionsManager: permissions)
+        sut.ingestCapturedData(Data("captured".utf8))
+
+        await sut.runInferenceOnCapture()
+
+        XCTAssertNil(sut.inferenceResult)
+        XCTAssertNotNil(sut.captureError)
+        XCTAssertFalse(sut.isRunningInference)
+    }
+
     func testPresentShareUsesPlaceholderWhenNoCapture() async {
         let permissions = StubPermissionsManager()
         let sut = CaptureViewModel(repository: StubInferenceRepository(), permissionsManager: permissions)
