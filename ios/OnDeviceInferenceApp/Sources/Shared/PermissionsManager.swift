@@ -44,13 +44,18 @@ public enum PermissionType: String, CaseIterable {
 }
 
 @MainActor
-public final class PermissionsManager: ObservableObject {
+public class PermissionsManager: ObservableObject {
     @Published public private(set) var cameraStatus: PermissionState
     @Published public private(set) var photoLibraryStatus: PermissionState
 
     public init() {
         cameraStatus = PermissionsManager.mapCameraStatus(AVCaptureDevice.authorizationStatus(for: .video))
         photoLibraryStatus = PermissionsManager.mapPhotoStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite))
+    }
+
+    public init(cameraStatus: PermissionState, photoLibraryStatus: PermissionState) {
+        self.cameraStatus = cameraStatus
+        self.photoLibraryStatus = photoLibraryStatus
     }
 
     public func refreshStatuses() {

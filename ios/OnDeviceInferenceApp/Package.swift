@@ -89,6 +89,18 @@ let package = Package(
             resources: [
                 .process("TestImages")
             ]
+        ),
+        .testTarget(
+            name: "ViewModelTests",
+            dependencies: [
+                "Onboarding",
+                "Capture",
+                "Result",
+                "History",
+                "Settings",
+                "Shared"
+            ],
+            path: "Tests/ViewModelTests"
         )
     ]
 )
