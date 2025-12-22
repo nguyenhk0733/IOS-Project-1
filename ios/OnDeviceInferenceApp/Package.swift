@@ -1,90 +1,71 @@
-// swift-tools-version: 5.10
+// swift-tools-version:5.10
 import PackageDescription
-import AppleProductTypes
 
 let package = Package(
-    name: "OnDeviceInferenceApp",
+    name: "OnDeviceInferenceCore",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17)
     ],
     products: [
-        .iOSApplication(
-            name: "OnDeviceInference",
-            targets: ["App"],
-            bundleIdentifier: "com.example.ondeviceinference",
-            teamIdentifier: "" ,
-            displayVersion: "0.1.0",
-            bundleVersion: "1",
-            appIcon: .placeholder(
-                emoji: "🤖",
-                color: .orange
-            ),
-            accentColor: .presetColor(.orange),
-            infoPlist: .extendingDefault(with: [
-                "UILaunchStoryboardName": "LaunchScreen",
-                "NSCameraUsageDescription": "Camera access is needed to capture images for on-device inference.",
-                "NSPhotoLibraryUsageDescription": "Photo library access lets you pick images to analyze on-device."
-            ]),
-            supportedDeviceFamilies: [
-                .pad,
-                .phone
-            ],
-            supportedInterfaceOrientations: [
-                .portrait,
-                .portraitUpsideDown,
-                .landscapeRight,
-                .landscapeLeft
-            ]
+        .library(
+            name: "OnDeviceInferenceCore",
+            targets: ["Shared",
+                      "Onboarding",
+                      "Capture",
+                      "Result",
+                      "History",
+                      "Settings"]
         )
     ],
-    dependencies: [
-        // Add Swift Package Manager dependencies here, e.g. model/runtime packages
-    ],
     targets: [
+        // MARK: - Shared core
         .target(
-            name: "App",
+            name: "Shared",
+            path: "Sources/Shared",
+            resources: [
+                .process("Resources")
+            ]
+        ),
+
+        // MARK: - Feature modules (logic only)
+        .target(
+            name: "Onboarding",
+            dependencies: ["Shared"],
+            path: "Sources/Onboarding"
+        ),
+        .target(
+            name: "Capture",
+            dependencies: ["Shared"],
+            path: "Sources/Capture"
+        ),
+        .target(
+            name: "Result",
+            dependencies: ["Shared"],
+            path: "Sources/Result"
+        ),
+        .target(
+            name: "History",
+            dependencies: ["Shared"],
+            path: "Sources/History"
+        ),
+        .target(
+            name: "Settings",
+            dependencies: ["Shared"],
+            path: "Sources/Settings"
+        ),
+
+        // MARK: - Tests
+        .testTarget(
+            name: "ModelIOTests",
             dependencies: [
+                "Shared",
                 "Onboarding",
                 "Capture",
                 "Result",
                 "History",
                 "Settings"
             ],
-            path: "Sources/App",
-            resources: [
-                .process("../Resources")
-            ]
-        ),
-        .target(
-            name: "Onboarding",
-            dependencies: ["Shared"]
-        ),
-        .target(
-            name: "Capture",
-            dependencies: ["Shared"]
-        ),
-        .target(
-            name: "Result",
-            dependencies: ["Shared"]
-        ),
-        .target(
-            name: "History",
-            dependencies: ["Shared"]
-        ),
-        .target(
-            name: "Settings",
-            dependencies: ["Shared"]
-        ),
-        .target(
-            name: "Shared",
-            dependencies: [],
-            resources: [
-                .process("Sources/Shared/Resources")
-            ]
-        ),
-        .testTarget(
-            name: "ModelIOTests",
-            dependencies: ["Shared"],
             path: "Tests/ModelIOTests",
             resources: [
                 .process("TestImages")
@@ -92,3 +73,4 @@ let package = Package(
         )
     ]
 )
+

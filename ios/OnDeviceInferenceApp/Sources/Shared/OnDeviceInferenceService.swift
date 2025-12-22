@@ -3,11 +3,15 @@ import Foundation
 import Vision
 import UIKit
 
+// MARK: - Protocol
+
 public protocol OnDeviceInferenceServiceProtocol {
     func prepareModel() async throws
     func runInference(on data: Data) async throws -> InferenceResult
     func benchmarkMetrics() -> InferenceBenchmark
 }
+
+// MARK: - Result
 
 public struct InferenceResult: Sendable, Equatable {
     public let summary: String
@@ -15,7 +19,12 @@ public struct InferenceResult: Sendable, Equatable {
     public let metadata: [String: String]
     public let timingMilliseconds: Double?
 
-    public init(summary: String, confidence: Double, metadata: [String: String] = [:], timingMilliseconds: Double? = nil) {
+    public init(
+        summary: String,
+        confidence: Double,
+        metadata: [String: String] = [:],
+        timingMilliseconds: Double? = nil
+    ) {
         self.summary = summary
         self.confidence = confidence
         self.metadata = metadata
@@ -23,7 +32,9 @@ public struct InferenceResult: Sendable, Equatable {
     }
 }
 
-public enum OnDeviceInferenceError: LocalizedError {
+// MARK: - Errors
+
+public enum OnDeviceInferenceError: LocalizedError, Equatable {
     case modelNotFound
     case modelNotPrepared
     case preprocessingFailed(String)
@@ -41,41 +52,77 @@ public enum OnDeviceInferenceError: LocalizedError {
             return L10n.formatted("inference_failed_format", reason)
         }
     }
+
+    // ✅ Equatable synthesis is OK, but we keep it explicit-safe for String associated values.
+    public static func == (lhs: OnDeviceInferenceError, rhs: OnDeviceInferenceError) -> Bool {
+        switch (lhs, rhs) {
+        case (.modelNotFound, .modelNotFound),
+             (.modelNotPrepared, .modelNotPrepared):
+            return true
+
+        case let (.preprocessingFailed(a), .preprocessingFailed(b)):
+            return a == b
+
+        case let (.inferenceFailed(a), .inferenceFailed(b)):
+            return a == b
+
+        default:
+            return false
+        }
+    }
 }
 
+// MARK: - Service
+
 public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
+
     private let modelName: String
     private let labelMapper: LabelMapper
-    private let preprocessor = ImagePreprocessor()
-    private var benchmark = InferenceBenchmark()
+    private let preprocessor: ImagePreprocessor
+    private let modelBundle: Bundle
 
+    private var benchmark = InferenceBenchmark()
     private var vnModel: VNCoreMLModel?
     private var targetImageSize: CGSize?
 
-    public init(modelName: String = "Model", labelMapper: LabelMapper = LabelMapper()) {
+    /// ✅ `modelBundle` injected for testability (Bundle.main by default).
+    /// ✅ `labelMapper` uses your fixed LabelMapper() (no Bundle.module default-arg issue).
+    public init(
+        modelName: String = "Model",
+        modelBundle: Bundle = .main,
+        labelMapper: LabelMapper = LabelMapper(),
+        preprocessor: ImagePreprocessor = ImagePreprocessor()
+    ) {
         self.modelName = modelName
+        self.modelBundle = modelBundle
         self.labelMapper = labelMapper
+        self.preprocessor = preprocessor
     }
 
     public func prepareModel() async throws {
         if vnModel != nil { return }
 
-        guard let modelURL = Bundle.main.url(forResource: modelName, withExtension: "mlmodelc") else {
+        guard let modelURL = modelBundle.url(forResource: modelName, withExtension: "mlmodelc") else {
             throw OnDeviceInferenceError.modelNotFound
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
                     let configuration = MLModelConfiguration()
                     configuration.computeUnits = .cpuAndGPU
+
                     let mlModel = try MLModel(contentsOf: modelURL, configuration: configuration)
                     let vnModel = try VNCoreMLModel(for: mlModel)
+
                     self.vnModel = vnModel
                     self.targetImageSize = Self.deriveInputSize(from: mlModel)
+
                     continuation.resume()
                 } catch {
-                    continuation.resume(throwing: OnDeviceInferenceError.inferenceFailed(error.localizedDescription))
+                    continuation.resume(
+                        throwing: OnDeviceInferenceError.inferenceFailed(error.localizedDescription)
+                    )
                 }
             }
         }
@@ -104,7 +151,13 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
                 do {
                     let elapsedMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
                     self.benchmark.record(durationMilliseconds: elapsedMs)
-                    let result = try Self.handleResults(request.results, mapper: self.labelMapper, timingMilliseconds: elapsedMs)
+
+                    let result = try Self.handleResults(
+                        request.results,
+                        mapper: self.labelMapper,
+                        timingMilliseconds: elapsedMs
+                    )
+
                     continuation.resume(returning: result)
                 } catch {
                     continuation.resume(throwing: error)
@@ -124,6 +177,8 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
         benchmark
     }
 
+    // MARK: - Helpers
+
     private static func deriveInputSize(from model: MLModel) -> CGSize {
         if let description = model.modelDescription.inputDescriptionsByName.first?.value,
            let constraint = description.imageConstraint {
@@ -133,11 +188,18 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
         return CGSize(width: 224, height: 224)
     }
 
-    private static func handleResults(_ results: [Any]?, mapper: LabelMapper, timingMilliseconds: Double?) throws -> InferenceResult {
+    private static func handleResults(
+        _ results: [Any]?,
+        mapper: LabelMapper,
+        timingMilliseconds: Double?
+    ) throws -> InferenceResult {
+
         if let classifications = results as? [VNClassificationObservation], let top = classifications.first {
+            // top.identifier might be "0", "1", ... or a string label depending on the model
             let mappedIndex = Int(top.identifier) ?? -1
             let mappedLabel = mappedIndex >= 0 ? mapper.label(for: mappedIndex) : top.identifier
             let summary = mappedLabel.isEmpty ? top.identifier : mappedLabel
+
             return InferenceResult(
                 summary: summary,
                 confidence: Double(top.confidence),
@@ -154,6 +216,7 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
            let array = feature.featureValue.multiArrayValue {
             let (index, confidence) = array.argmax()
             let label = mapper.label(for: index)
+
             return InferenceResult(
                 summary: label,
                 confidence: confidence,
@@ -169,6 +232,8 @@ public final class OnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
     }
 }
 
+// MARK: - Mock Service
+
 public final class MockOnDeviceInferenceService: OnDeviceInferenceServiceProtocol {
     private var benchmark = InferenceBenchmark()
 
@@ -180,13 +245,19 @@ public final class MockOnDeviceInferenceService: OnDeviceInferenceServiceProtoco
 
     public func runInference(on data: Data) async throws -> InferenceResult {
         let start = CFAbsoluteTimeGetCurrent()
+
         let hashed = abs(data.hashValue % 3)
         let elapsedMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
+
         benchmark.record(durationMilliseconds: elapsedMs)
+
         return InferenceResult(
             summary: ["healthy", "disease", "unknown"][hashed],
             confidence: 0.8,
-            metadata: ["source": "mock", "inferenceTimeMs": String(format: "%.1f", elapsedMs)],
+            metadata: [
+                "source": "mock",
+                "inferenceTimeMs": String(format: "%.1f", elapsedMs)
+            ],
             timingMilliseconds: elapsedMs
         )
     }
@@ -195,6 +266,8 @@ public final class MockOnDeviceInferenceService: OnDeviceInferenceServiceProtoco
         benchmark
     }
 }
+
+// MARK: - MLMultiArray argmax
 
 private extension MLMultiArray {
     func argmax() -> (index: Int, confidence: Double) {
@@ -212,3 +285,4 @@ private extension MLMultiArray {
         return (bestIndex, bestValue)
     }
 }
+

@@ -1,18 +1,26 @@
 import Foundation
 
 public struct LabelMapper {
+
     private let labels: [String]
 
-    public init(bundle: Bundle = .module, resourceName: String = "labels") {
-        let url = bundle.url(forResource: resourceName, withExtension: "json")
-        if let url, let data = try? Data(contentsOf: url),
+    // MARK: - Designated initializer (NO default Bundle.module)
+    public init(bundle: Bundle, resourceName: String = "labels") {
+        if let url = bundle.url(forResource: resourceName, withExtension: "json"),
+           let data = try? Data(contentsOf: url),
            let decoded = try? JSONDecoder().decode([String].self, from: data) {
-            labels = decoded
+            self.labels = decoded
         } else {
-            labels = []
+            self.labels = []
         }
     }
 
+    // MARK: - Convenience initializer for app runtime
+    public init(resourceName: String = "labels") {
+        self.init(bundle: Bundle.module, resourceName: resourceName)
+    }
+
+    // MARK: - API
     public func label(for index: Int) -> String {
         guard labels.indices.contains(index) else {
             return "Class_\(index)"
@@ -20,3 +28,4 @@ public struct LabelMapper {
         return labels[index]
     }
 }
+
